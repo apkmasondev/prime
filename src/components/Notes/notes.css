@@ -1,0 +1,234 @@
+.notes__trigger {
+  position: absolute;
+  z-index: 5;
+  inset-block-end: max(var(--safe-bottom), 0.9rem);
+  inset-inline-end: calc(max(var(--safe-right), var(--gutter)) + var(--board-right, 0px));
+  padding: 0.5rem 0.2rem;
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--on-film-muted);
+  border-block-end: 1px solid currentcolor;
+  transition: color 200ms var(--curve-out);
+}
+
+.notes__trigger:hover {
+  color: var(--on-film);
+}
+
+/*
+ * Stacked, it moves up onto the film: the foot of the stage belongs to the
+ * index there, and the picture gives the label something to sit against.
+ */
+.stage[data-mode='stacked'] .notes__trigger {
+  inset-block-start: max(var(--safe-top), 0.7rem);
+  inset-block-end: auto;
+  inset-inline-end: max(var(--safe-right), var(--gutter));
+}
+
+/* A landscape phone has no room at the foot for both, so it moves up too. */
+@media (height <= 520px) {
+  .notes__trigger {
+    inset-block-start: max(var(--safe-top), 0.7rem);
+    inset-block-end: auto;
+  }
+}
+
+.notes {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.notes[data-open='true'] {
+  pointer-events: auto;
+}
+
+.notes__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(6 9 13 / 62%);
+  opacity: 0;
+  transition: opacity 320ms var(--curve-out);
+  cursor: default;
+}
+
+.notes[data-open='true'] .notes__scrim {
+  opacity: 1;
+}
+
+.notes__sheet {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: min(34rem, 100%);
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  color: var(--text-body);
+  translate: 100% 0;
+  transition: translate 420ms var(--curve);
+  box-shadow: -30px 0 70px -40px rgb(6 9 13 / 80%);
+}
+
+.notes[data-open='true'] .notes__sheet {
+  translate: 0 0;
+}
+
+.notes__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: clamp(1rem, 3vmin, 1.6rem) clamp(1.2rem, 4vmin, 2.2rem);
+  border-block-end: 1px solid var(--rule);
+}
+
+.notes__mark {
+  display: block;
+  inline-size: clamp(6rem, 22vmin, 9rem);
+  block-size: auto;
+}
+
+.notes__close {
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-block-end: 1px solid currentcolor;
+  padding-block-end: 2px;
+}
+
+.notes__close:hover {
+  color: var(--text-strong);
+}
+
+.notes__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(1rem, 3vmin, 1.8rem) clamp(1.2rem, 4vmin, 2.2rem)
+    calc(clamp(1.2rem, 4vmin, 2.4rem) + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.4rem, 4vmin, 2.4rem);
+}
+
+.notes__heading {
+  font-size: var(--step--2);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold-500);
+  font-weight: 600;
+  margin-block-end: 0.9rem;
+}
+
+.notes__stations {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.notes__stations > li {
+  padding-block-end: 1.1rem;
+  border-block-end: 1px solid var(--rule);
+}
+
+.notes__stations > li:last-child {
+  border-block-end: 0;
+  padding-block-end: 0;
+}
+
+.notes__station-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  margin-block-end: 0.25em;
+}
+
+.notes__number {
+  font-size: var(--step--2);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--gold-500);
+  flex: 0 0 auto;
+}
+
+.notes__station-title {
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  color: var(--text-strong);
+}
+
+.notes__statement {
+  font-size: var(--step-0);
+  color: var(--text-body);
+  text-wrap: pretty;
+}
+
+.notes__summary,
+.notes__aside-label {
+  color: var(--gold-500);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.86em;
+}
+
+.notes__aside-label::after {
+  content: ' — ';
+  letter-spacing: 0;
+}
+
+.notes__aside {
+  margin-block-start: 0.35em;
+  font-size: var(--step--1);
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+.notes__refs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-size: var(--step--1);
+}
+
+.notes__refs li {
+  display: grid;
+  grid-template-columns: 2.2em 1fr;
+  gap: 0.15em 0.4em;
+}
+
+.notes__refs a {
+  color: var(--text-strong);
+  text-decoration-color: var(--gold-400);
+  text-underline-offset: 3px;
+}
+
+.notes__refs a:hover {
+  text-decoration-color: currentcolor;
+}
+
+.notes__source {
+  grid-column: 2;
+  color: var(--text-muted);
+  font-size: var(--step--2);
+}
+
+.notes__colophon {
+  font-size: var(--step--2);
+  line-height: 1.5;
+  color: var(--text-muted);
+  padding-block-start: 1rem;
+  border-block-start: 1px solid var(--rule);
+  text-wrap: pretty;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notes__sheet,
+  .notes__scrim {
+    transition-duration: 1ms;
+  }
+}

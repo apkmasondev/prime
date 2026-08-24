@@ -1,0 +1,65 @@
+/*
+ * The scroll range and the single stage that everything happens inside.
+ * Nothing on the page is taller than the viewport except `.scroll-track`,
+ * which exists only to give the wheel something to travel along.
+ */
+
+.scroll-track {
+  block-size: calc(var(--screens) * 100svh);
+  inline-size: 100%;
+  pointer-events: none;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  block-size: 100dvh;
+  overflow: clip;
+  background: var(--stage-bg);
+  isolation: isolate;
+  --hand-gap: clamp(1rem, 2.4vmin, 2.4rem);
+}
+
+.stage[data-ready='false'] .stage__content,
+.stage[data-ready='false'] .stage__vignette {
+  opacity: 0;
+}
+
+.stage__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(125% 95% at 50% 42%, transparent 42%, rgb(8 11 15 / 34%) 100%),
+    linear-gradient(to bottom, rgb(8 11 15 / 26%) 0%, transparent 18%);
+  transition: opacity 500ms var(--curve-out);
+}
+
+.stage__content {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 700ms var(--curve-out);
+}
+
+.stage__content > * {
+  pointer-events: none;
+}
+
+/* Interactive descendants opt back in individually. */
+.stage__content a,
+.stage__content button,
+.stage__content [tabindex] {
+  pointer-events: auto;
+}
+
+/*
+ * Below the stacking breakpoint the film keeps the top of the frame and the
+ * explanation takes the rest. It is the same composition, re-cut: an image and
+ * the label beneath it, the way an exhibit is actually hung.
+ */
+.stage[data-mode='stacked'] {
+  --panel-cap: none;
+}

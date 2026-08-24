@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <title>PRIME — A Short Walk Through Infinity</title>
+    <meta
+      name="description"
+      content="An interactive journey through prime numbers — from simple divisibility to infinity, hidden patterns, factorisation and cryptography."
+    />
+    <meta name="theme-color" content="#0e1319" />
+    <meta name="color-scheme" content="dark" />
+
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="PRIME — A Short Walk Through Infinity" />
+    <meta
+      property="og:description"
+      content="A mathematics professor walks a university corridor and stops six times. Each stop is a station about prime numbers: definition, sieve, infinity, pattern, factorisation, cryptography."
+    />
+    <meta property="og:image" content="%SITE_URL%og.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="PRIME — A Short Walk Through Infinity" />
+    <meta property="og:locale" content="en_GB" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PRIME — A Short Walk Through Infinity" />
+    <meta
+      name="twitter:description"
+      content="An interactive journey through prime numbers — from simple divisibility to infinity, hidden patterns, factorisation and cryptography."
+    />
+    <meta name="twitter:image" content="%SITE_URL%og.jpg" />
+
+    <style>
+      .noscript {
+        max-width: 42rem;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+        color: #f3f0e8;
+        font: 16px/1.6 'Segoe UI', system-ui, sans-serif;
+      }
+      .noscript h1 { font-size: 1.5rem; letter-spacing: 0.04em; }
+      .noscript ol { padding-left: 1.2rem; }
+      .noscript li { margin-block: 0.7rem; }
+      .noscript strong { color: #e0bd85; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div class="noscript">
+        <h1>PRIME — A Short Walk Through Infinity</h1>
+        <p>
+          This is a scroll-driven film. It needs JavaScript to run, but the mathematics does not:
+        </p>
+        <ol>
+          <li><strong>Exactly two divisors.</strong> A prime is a whole number greater than 1 divisible only by 1 and itself. 2 is the only even prime.</li>
+          <li><strong>The sieve of Eratosthenes.</strong> Strike out every multiple of each prime in turn; what survives is prime.</li>
+          <li><strong>There is no last prime.</strong> Multiply any finite list of primes together and add one. The result leaves a remainder of 1 when divided by each of them, so it is prime itself or has a prime factor the list never held.</li>
+          <li><strong>Irregular is not structureless.</strong> Wind the whole numbers into a square spiral, mark the primes, and diagonal streaks appear.</li>
+          <li><strong>The atoms of arithmetic.</strong> Every whole number above 1 is a product of primes, in exactly one way apart from order. 84 = 2 × 2 × 3 × 7.</li>
+          <li><strong>Easy to multiply, hard to undo.</strong> Large primes power classic public-key systems such as RSA.</li>
+        </ol>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

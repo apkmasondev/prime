@@ -1,0 +1,103 @@
+/*
+ * Design tokens.
+ *
+ * The palette is taken from the project mark: an ink that is almost but not
+ * quite black, warm limestone papers, and a single restrained gold. Nothing
+ * here is decorative - colour never carries meaning on its own, it only
+ * reinforces a difference already made by weight, shape or label.
+ */
+
+:root {
+  /* Ink */
+  --ink-900: #0e1319;
+  --ink-800: #141a22;
+  --ink-700: #1c222a; /* the mark's ink */
+  --ink-600: #2b333d;
+  --ink-500: #414b57;
+  --ink-400: #5d6874;
+
+  /* Paper and stone */
+  --paper-000: #faf8f3;
+  --paper-100: #f3f0e8;
+  --paper-200: #e9e4d9;
+  --paper-300: #d9d3c5;
+  --stone-400: #b6ae9e;
+  --stone-500: #8d8677;
+
+  /* Accent */
+  --gold-500: #c1954c;
+  --gold-400: #d0a45c;
+  --gold-300: #e0bd85;
+
+  /* Roles */
+  --stage-bg: var(--ink-900);
+  --panel-bg: var(--paper-100);
+  --panel-edge: color-mix(in oklab, var(--ink-700) 16%, transparent);
+  --text-strong: var(--ink-700);
+  --text-body: var(--ink-600);
+  --text-muted: var(--stone-500);
+  --rule: color-mix(in oklab, var(--ink-700) 22%, transparent);
+  --rule-strong: color-mix(in oklab, var(--ink-700) 45%, transparent);
+  --on-film: var(--paper-000);
+  --on-film-muted: color-mix(in oklab, var(--paper-000) 68%, transparent);
+
+  /* Type */
+  --font-display: 'Playfair Display Variable', 'Playfair Display', 'Iowan Old Style',
+    'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+  --font-text: 'IBM Plex Sans Variable', 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system,
+    'Helvetica Neue', Arial, sans-serif;
+
+  --step--2: clamp(0.66rem, 0.62rem + 0.18vw, 0.76rem);
+  --step--1: clamp(0.78rem, 0.73rem + 0.24vw, 0.9rem);
+  --step-0: clamp(0.92rem, 0.86rem + 0.3vw, 1.06rem);
+  --step-1: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
+  --step-2: clamp(1.35rem, 1.15rem + 1vw, 2rem);
+  --step-3: clamp(1.8rem, 1.4rem + 2vw, 3.1rem);
+  --step-4: clamp(2.6rem, 1.6rem + 5vw, 6.5rem);
+
+  /* Rhythm */
+  --gutter: clamp(1.15rem, 0.6rem + 2vw, 2.75rem);
+  --panel-pad-x: clamp(1.4rem, 0.8rem + 2.4vw, 3.25rem);
+  --panel-pad-y: clamp(1.3rem, 0.8rem + 1.8vw, 2.6rem);
+
+  /* Motion */
+  --settle: 620ms;
+  --settle-slow: 900ms;
+  --curve: cubic-bezier(0.22, 0.61, 0.24, 1);
+  --curve-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/*
+ * Registered so they can be read with calc() and interpolated by the compositor
+ * rather than re-parsed as unknown strings on every frame.
+ */
+@property --progress {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --station-progress {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --intro {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+@property --outro {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --enter {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}

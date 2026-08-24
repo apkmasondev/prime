@@ -1,0 +1,112 @@
+.index {
+  position: absolute;
+  z-index: 4;
+  inset-block-end: max(var(--safe-bottom), 0.9rem);
+  inset-inline-start: calc(50% + var(--board-shift, 0px));
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem 0.3rem;
+  /* Hidden while the title is still up; it has nothing to report yet. */
+  opacity: clamp(0, calc((1 - var(--intro, 1)) * 1.6), 1);
+  transition: opacity 260ms var(--curve-out);
+}
+
+.index__rail {
+  position: relative;
+  inline-size: clamp(9rem, 26vmin, 15rem);
+  block-size: 1px;
+  background: rgb(250 248 243 / 26%);
+  overflow: clip;
+}
+
+.index__fill {
+  position: absolute;
+  inset: 0;
+  background: var(--gold-400);
+  transform-origin: left center;
+  scale: var(--progress, 0) 1;
+}
+
+.index__list {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(0.35rem, 1.6vmin, 1rem);
+}
+
+.index__stop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.35rem 0.4rem;
+  min-inline-size: 2.1rem;
+  min-block-size: 2.1rem;
+  color: var(--on-film-muted);
+  transition: color 200ms var(--curve-out);
+}
+
+.index__tick {
+  inline-size: 1px;
+  block-size: 0.45rem;
+  background: currentcolor;
+  transition:
+    block-size 220ms var(--curve),
+    background 220ms var(--curve-out);
+}
+
+.index__number {
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.index__stop:hover {
+  color: var(--on-film);
+}
+
+/* The current stop is marked three ways: weight, a longer tick, and colour. */
+.index__stop[aria-current='step'] {
+  color: var(--gold-300);
+}
+
+.index__stop[aria-current='step'] .index__tick {
+  block-size: 0.85rem;
+  inline-size: 2px;
+  background: var(--gold-400);
+}
+
+.index__stop[aria-current='step'] .index__number {
+  font-weight: 700;
+}
+
+.stage[data-mode='stacked'] .index {
+  inset-block-end: max(var(--safe-bottom), 0.55rem);
+}
+
+/* Over the paper board the index needs the opposite ink. */
+.stage[data-mode='stacked'] .index__rail {
+  background: var(--rule);
+}
+
+.stage[data-mode='stacked'] .index__stop {
+  color: var(--text-muted);
+}
+
+.stage[data-mode='stacked'] .index__stop:hover {
+  color: var(--text-strong);
+}
+
+.stage[data-mode='stacked'] .index__stop[aria-current='step'] {
+  color: var(--gold-500);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .index__tick,
+  .index__stop {
+    transition: none;
+  }
+}

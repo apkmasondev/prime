@@ -1,0 +1,99 @@
+.overture {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: var(--intro, 1);
+  /* The title recedes very slightly as it clears, so the corridor takes over. */
+  scale: calc(1 - (1 - var(--intro, 1)) * 0.035);
+  pointer-events: none;
+}
+
+.overture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(78% 62% at 50% 52%, rgb(8 11 15 / 62%) 0%, rgb(8 11 15 / 12%) 62%, transparent 82%);
+}
+
+.overture__block {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.7rem, 2.2vmin, 1.5rem);
+  padding-inline: var(--gutter);
+  text-align: center;
+}
+
+.overture__mark {
+  display: block;
+  inline-size: min(56vw, 34rem);
+  block-size: auto;
+  translate: 0 calc((1 - var(--intro, 1)) * -0.8rem);
+}
+
+.overture__subtitle {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: var(--step-2);
+  line-height: 1.15;
+  color: var(--on-film);
+  letter-spacing: 0.005em;
+  text-wrap: balance;
+}
+
+.overture__prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55em;
+  margin-block-start: clamp(0.4rem, 2vmin, 1.6rem);
+  font-size: var(--step--2);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--on-film-muted);
+}
+
+.overture__prompt-rule {
+  inline-size: 1px;
+  block-size: clamp(1.6rem, 4.5vmin, 3rem);
+  background: linear-gradient(to bottom, transparent, var(--gold-300));
+  transform-origin: top;
+  animation: overture-draw 2.6s var(--curve) infinite;
+}
+
+@keyframes overture-draw {
+  0%,
+  100% {
+    scale: 1 0.25;
+    opacity: 0.35;
+  }
+
+  45% {
+    scale: 1 1;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overture__prompt-rule {
+    animation: none;
+    scale: 1 1;
+  }
+
+  .overture {
+    scale: 1;
+  }
+}
+
+/* Stacked: the title sits inside the film band, the paper field below stays clear. */
+.stage[data-mode='stacked'] .overture {
+  inset-block-end: auto;
+  block-size: var(--film-box-h, 50%);
+}
+
+.stage[data-mode='stacked'] .overture__mark {
+  inline-size: min(74vw, 22rem);
+}

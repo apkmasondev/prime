@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="PRIME">
+  <title>PRIME</title>
+  <rect width="64" height="64" fill="#1c222a"/>
+  <g fill="#faf8f3">
+    <!-- A high-contrast serif P: heavy stem, thin strokes across the bowl. -->
+    <path d="M18 12h9v40h-9z"/>
+    <path d="M10.5 12H27v4.5H10.5z"/>
+    <path d="M9.5 47.5H35V52H9.5z"/>
+    <path fill-rule="evenodd" d="M25 11.5h2.5a12.5 12.5 0 0 1 0 25H25v-5h2.5a7.5 7.5 0 0 0 0-15H25z"/>
+  </g>
+  <!-- The prime mark, in the gold the wordmark uses for the dot on its I. -->
+  <circle cx="49.5" cy="15" r="6" fill="#c1954c"/>
+</svg>

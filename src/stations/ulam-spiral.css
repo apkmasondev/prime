@@ -1,0 +1,50 @@
+.ulam {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: clamp(0.45rem, 1.2vmin, 0.8rem);
+}
+
+.ulam__frame {
+  position: relative;
+  flex: 0 1 auto;
+  inline-size: 100%;
+  max-inline-size: min(calc(var(--figure-cap, 100%) - 2.6em), 30rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--pane-rule);
+  background: color-mix(in oklab, var(--pane-ink) 3%, transparent);
+}
+
+.ulam__canvas {
+  display: block;
+  /* The plot fades up as a whole; the marks themselves arrive from the centre. */
+  opacity: clamp(0, calc(var(--r) * 5), 1);
+}
+
+.ulam__caption {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pane-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.ulam__mark {
+  inline-size: 6px;
+  block-size: 6px;
+  background: var(--pane-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ulam__canvas {
+    opacity: 1;
+  }
+}

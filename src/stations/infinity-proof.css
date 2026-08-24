@@ -1,0 +1,139 @@
+.euclid {
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  font-variant-numeric: lining-nums tabular-nums;
+  /*
+   * The argument is four beats plus a six-row table, so instead of a breakpoint
+   * it is sized against the height it has been given and everything inside it
+   * is expressed in em. A short card gets a smaller proof, never a clipped one.
+   */
+  font-size: clamp(0.52rem, 3.4cqb, 1.05rem);
+}
+
+.euclid__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.62em;
+}
+
+/* Four beats, each waiting for the one before it. */
+.euclid__step {
+  --in: clamp(0, calc((var(--r) * 4.6 - var(--s)) * 1.5), 1);
+
+  opacity: var(--in);
+  translate: 0 calc((1 - var(--in)) * 0.45em);
+  padding-inline-start: 0.9em;
+  border-inline-start: 1px solid var(--pane-rule);
+}
+
+.euclid__step:last-child {
+  border-inline-start-color: color-mix(in oklab, var(--pane-accent) 55%, transparent);
+}
+
+.euclid__lead {
+  font-size: 0.88em;
+  color: var(--pane-muted);
+  margin-block-end: 0.3em;
+  text-wrap: pretty;
+}
+
+.euclid__list,
+.euclid__equation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.18em 0.3em;
+  font-family: var(--font-display);
+  font-size: 1.3em;
+  color: var(--pane-strong);
+}
+
+.euclid__list {
+  gap: 0.1em 0.55em;
+}
+
+.euclid__sep {
+  display: inline-block;
+  inline-size: 3px;
+  block-size: 3px;
+  border-radius: 50%;
+  background: var(--pane-accent);
+  margin-inline-end: 0.55em;
+  translate: 0 -0.32em;
+}
+
+.euclid__var {
+  font-style: italic;
+}
+
+.euclid__op,
+.euclid__times {
+  color: var(--pane-muted);
+  font-size: 0.82em;
+}
+
+.euclid__equation strong {
+  font-weight: 700;
+}
+
+.euclid__table {
+  border-collapse: collapse;
+  font-size: 0.92em;
+  line-height: 1.32;
+  color: var(--pane-body);
+}
+
+.euclid__table th,
+.euclid__table td {
+  padding: 0.06em 0.24em 0.06em 0;
+  font-weight: 400;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.euclid__table th {
+  color: var(--pane-muted);
+}
+
+.euclid__factor {
+  color: var(--pane-strong);
+  font-weight: 600;
+}
+
+.euclid__remainder {
+  color: var(--pane-accent);
+  font-weight: 700;
+  padding-inline-start: 0.15em;
+}
+
+.euclid__equation--result {
+  font-size: 1.3em;
+}
+
+.euclid__new {
+  position: relative;
+  font-weight: 700;
+}
+
+.euclid__new::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: -0.12em;
+  block-size: 2px;
+  background: var(--pane-accent);
+}
+
+.euclid__coda {
+  margin-block-start: 0.35em;
+  font-size: 0.88em;
+  color: var(--pane-body);
+  text-wrap: pretty;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .euclid__step {
+    --in: 1;
+  }
+}

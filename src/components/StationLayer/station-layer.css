@@ -1,0 +1,460 @@
+/*
+ * The station curves live here rather than on the card, so the connector - which
+ * is the card's sibling, not its child - is driven by exactly the same numbers.
+ */
+.station-layer {
+  --e: calc(
+    clamp(0, var(--station-progress, 0) / 0.11, 1) *
+      clamp(0, (1 - var(--station-progress, 0)) / 0.12, 1)
+  );
+  --ee: calc(var(--e) * var(--e) * (3 - 2 * var(--e)));
+  /* Diagram build-out, deliberately later and slower than the card itself. */
+  --r: clamp(0, calc((var(--station-progress, 0) - 0.13) / 0.58), 1);
+  --card-away: calc(1 - var(--board-presence, 0));
+
+  position: absolute;
+  inset: 0;
+}
+
+.paper-edges {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+  overflow: hidden;
+}
+
+/*
+ * A station is a sheet laid against the corridor. `--board-presence` is driven
+ * by the same loop that pans the film, so the card slides in exactly as the
+ * frame re-composes to leave room for it. Everything else a station animates is
+ * derived from `--station-progress`, which means scrolling backwards unwinds it
+ * precisely - there is no "already played" state anywhere.
+ */
+.panel {
+  /* Square diagrams are capped against the space the figure actually has, not
+     against the viewport, so a short card shrinks its figure instead of
+     overflowing it. */
+  --figure-cap: min(100%, 100cqb);
+
+  /*
+   * Everything inside a station draws its colour from these, never from the
+   * global palette, so the same diagrams read correctly on paper and on slate.
+   */
+  --pane-bg: var(--panel-bg);
+  --pane-strong: var(--text-strong);
+  --pane-body: var(--text-body);
+  --pane-muted: var(--text-muted);
+  --pane-rule: var(--rule);
+  --pane-rule-strong: var(--rule-strong);
+  --pane-accent: var(--gold-500);
+  --pane-ink: var(--ink-700);
+  --pane-ink-soft: var(--ink-500);
+
+  position: absolute;
+  z-index: 2;
+  /* Full height, flush to the outer edge: the sheet closes the frame, so the
+     film behind it never has to reach further than the picture it is showing. */
+  inset-block: 0;
+  inline-size: var(--board-settled, 0px);
+  filter: drop-shadow(-14px 0 30px rgb(6 9 13 / 42%));
+  will-change: translate;
+}
+
+.panel[data-active='false'] {
+  visibility: hidden;
+  content-visibility: hidden;
+}
+
+.panel[data-side='left'] {
+  inset-inline-start: 0;
+  filter: drop-shadow(14px 0 30px rgb(6 9 13 / 42%));
+  translate: calc(var(--card-away) * -101%) 0;
+}
+
+.panel[data-side='right'] {
+  inset-inline-end: 0;
+  translate: calc(var(--card-away) * 101%) 0;
+}
+
+/* --- The sheet ----------------------------------------------------------- */
+
+.panel__surface {
+  position: relative;
+  block-size: 100%;
+  overflow: clip;
+  container-type: size;
+  container-name: card;
+  padding: var(--panel-pad-y) var(--panel-pad-x);
+  background: var(--pane-bg);
+  color: var(--pane-body);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.55rem, 1.4vmin, 1.05rem);
+  clip-path: url('#deckle-torn-left');
+  padding-inline-start: calc(var(--panel-pad-x) + 1.4%);
+}
+
+.panel[data-side='left'] .panel__surface {
+  clip-path: url('#deckle-torn-right');
+  padding-inline-start: var(--panel-pad-x);
+  padding-inline-end: calc(var(--panel-pad-x) + 1.4%);
+}
+
+/*
+ * Paper, not a rectangle: a warm wash where the gallery light falls, and a fine
+ * fibre grain generated once as an SVG tile. Both are material rather than
+ * ornament - without them the card reads as a browser element sitting on a film.
+ */
+.panel__surface::before,
+.panel__surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.panel__surface::before {
+  background:
+    radial-gradient(118% 84% at 26% -6%, rgb(255 255 255 / 62%), transparent 62%),
+    linear-gradient(200deg, transparent 55%, rgb(120 104 78 / 9%) 100%);
+}
+
+.panel__surface::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' seed='11'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23f)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: multiply;
+  opacity: 0.055;
+}
+
+.panel__surface > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Slate ---------------------------------------------------------------
+ * Station three is the one the professor turns his head towards rather than
+ * points at, and what he turns towards is a blackboard. So it is not a paper
+ * card at all: it is a slate plate with a straight, rigid edge. The difference
+ * is carried by the material, which lets the type stay fully opaque and fully
+ * legible.
+ */
+
+.panel[data-surface='slate'] {
+  /*
+   * Slate and oak, sampled from the corridor's own blackboards rather than
+   * invented: the boards in the film are framed and carry a chalk rail, so the
+   * plate is given the same two pieces of furniture and nothing else.
+   */
+  --pane-bg: #262f31;
+  --wood: #94794f;
+  --wood-lit: #a88d63;
+  --wood-shade: #6d5839;
+  --rail: clamp(0.8rem, 1.9vmin, 1.35rem);
+  --post: clamp(0.55rem, 1.25vmin, 0.95rem);
+  /* Replaced per side below; the default keeps the shorthand valid. */
+  --wood-post: none;
+  --pane-strong: var(--paper-000);
+  --pane-body: color-mix(in oklab, var(--paper-000) 88%, transparent);
+  --pane-muted: color-mix(in oklab, var(--paper-000) 64%, transparent);
+  --pane-rule: color-mix(in oklab, var(--paper-000) 24%, transparent);
+  --pane-rule-strong: color-mix(in oklab, var(--paper-000) 48%, transparent);
+  --pane-accent: var(--gold-300);
+  --pane-ink: var(--paper-000);
+  --pane-ink-soft: color-mix(in oklab, var(--paper-000) 72%, transparent);
+
+  filter: drop-shadow(14px 0 32px rgb(4 6 9 / 55%));
+}
+
+.panel[data-surface='slate'] .panel__surface,
+.panel[data-side='left'][data-surface='slate'] .panel__surface {
+  clip-path: none;
+  /*
+   * The frame and the rail are background layers, so a real blackboard costs no
+   * extra elements - and the padding is grown to match, so nothing is ever
+   * written on the woodwork.
+   */
+  background:
+    linear-gradient(
+        to bottom,
+        rgb(0 0 0 / 34%) 0 2px,
+        var(--wood-lit) 2px 4px,
+        var(--wood) 4px 68%,
+        var(--wood-shade) 68% 100%
+      )
+      bottom / 100% var(--rail) no-repeat,
+    var(--wood-post) var(--pane-bg);
+  padding-block-end: calc(var(--panel-pad-y) + var(--rail));
+}
+
+/* The framed edge is the one that meets the picture. */
+.panel[data-side='left'][data-surface='slate'] .panel__surface {
+  --wood-post: linear-gradient(
+      to right,
+      rgb(0 0 0 / 30%) 0 2px,
+      var(--wood) 2px 62%,
+      var(--wood-lit) 62% 78%,
+      var(--wood-shade) 78% 100%
+    )
+    right / var(--post) 100% no-repeat;
+
+  padding-inline-end: calc(var(--panel-pad-x) + var(--post));
+}
+
+.panel[data-side='right'][data-surface='slate'] .panel__surface {
+  --wood-post: linear-gradient(
+      to left,
+      rgb(0 0 0 / 30%) 0 2px,
+      var(--wood) 2px 62%,
+      var(--wood-lit) 62% 78%,
+      var(--wood-shade) 78% 100%
+    )
+    left / var(--post) 100% no-repeat;
+
+  padding-inline-start: calc(var(--panel-pad-x) + var(--post));
+}
+
+.panel[data-surface='slate'] .panel__surface::before,
+.panel[data-surface='slate'] .panel__surface::after {
+  inset-block-end: var(--rail);
+}
+
+.panel[data-surface='slate'] .panel__surface::before {
+  background:
+    radial-gradient(120% 90% at 74% 6%, rgb(255 255 255 / 8%), transparent 58%),
+    linear-gradient(180deg, rgb(255 255 255 / 3%), transparent 40%);
+}
+
+/* Chalk dust rather than paper fibre. */
+.panel[data-surface='slate'] .panel__surface::after {
+  mix-blend-mode: screen;
+  opacity: 0.045;
+}
+
+/* --- Card contents ------------------------------------------------------- */
+
+.panel__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pane-muted);
+}
+
+.panel__number {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--pane-accent);
+  letter-spacing: 0.06em;
+}
+
+.panel__rule {
+  flex: 0 0 auto;
+  inline-size: clamp(1.2rem, 3vmin, 2.4rem);
+  block-size: 1px;
+  background: var(--pane-accent);
+  opacity: 0.55;
+}
+
+.panel__label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.panel__title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--step-2);
+  line-height: 1.08;
+  letter-spacing: -0.005em;
+  color: var(--pane-strong);
+  text-wrap: balance;
+}
+
+.panel[data-surface='slate'] .panel__title {
+  font-style: italic;
+}
+
+.panel__statement {
+  font-size: var(--step-0);
+  line-height: 1.45;
+  max-inline-size: 46ch;
+  text-wrap: pretty;
+}
+
+.panel__figure {
+  flex: 1 1 0;
+  min-block-size: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  overflow: clip;
+  container-type: size;
+  container-name: figure;
+  margin-block: clamp(0.15rem, 0.8vmin, 0.7rem);
+}
+
+/* Every diagram fills the figure and shrinks inside it rather than spilling. */
+.panel__figure > * {
+  inline-size: 100%;
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.panel__note {
+  font-size: var(--step--1);
+  line-height: 1.4;
+  color: var(--pane-muted);
+  padding-block-start: clamp(0.5rem, 1.2vmin, 0.9rem);
+  border-block-start: 1px solid var(--pane-rule);
+  text-wrap: pretty;
+}
+
+.panel__note-label {
+  display: block;
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pane-accent);
+  margin-block-end: 0.25em;
+}
+
+/* A short card tightens its own typography rather than spilling. */
+@container card (height < 520px) {
+  .panel__title {
+    font-size: var(--step-1);
+  }
+
+  .panel__statement {
+    font-size: var(--step--1);
+    line-height: 1.35;
+  }
+
+  .panel__note {
+    font-size: var(--step--2);
+  }
+}
+
+/* A very short sheet gives what room it has to the diagram. */
+@container card (height < 380px) {
+  .panel__surface {
+    gap: clamp(0.35rem, 0.9vmin, 0.7rem);
+  }
+
+  .panel__title {
+    font-size: var(--step-0);
+  }
+
+  .panel__statement {
+    font-size: var(--step--1);
+    line-height: 1.32;
+  }
+}
+
+@container card (height < 250px) {
+  .panel__note {
+    display: none;
+  }
+}
+
+/* --- Stacked layout ------------------------------------------------------
+ * On a tall screen the sheet is slid under the film instead of beside it. The
+ * field below the frame is permanent, so nothing re-flows mid-scroll.
+ */
+
+.stage[data-mode='stacked'] .panel {
+  inset-inline: 0;
+  inset-block-start: calc(var(--film-box-h, 50%) - 1.6vmin);
+  inset-block-end: 0;
+  inline-size: auto;
+  filter: none;
+  translate: 0 calc(var(--card-away) * 1.4rem);
+  opacity: var(--ee);
+}
+
+.stage[data-mode='stacked'] .panel .panel__surface,
+.stage[data-mode='stacked'] .panel[data-side='left'] .panel__surface {
+  clip-path: url('#deckle-torn-top');
+  padding-block-start: calc(var(--panel-pad-y) + 2.2vmin);
+  padding-inline: max(var(--panel-pad-x), var(--safe-left), var(--safe-right));
+  padding-block-end: calc(var(--panel-pad-y) + var(--safe-bottom) + 3.4rem);
+}
+
+/*
+ * Stacked, the plate keeps its slate and its woodwork - the material is part of
+ * what the station is, and a phone should get the same station, not a paler one.
+ * Only the framed edge moves: it is the top edge that now meets the picture.
+ */
+.stage[data-mode='stacked'] .panel[data-surface='slate'] .panel__surface,
+.stage[data-mode='stacked'] .panel[data-side='left'][data-surface='slate'] .panel__surface {
+  --wood-post: linear-gradient(
+      to bottom,
+      var(--wood-shade) 0 14%,
+      var(--wood-lit) 14% 30%,
+      var(--wood) 30% 100%
+    )
+    top / 100% var(--post) no-repeat;
+
+  clip-path: none;
+  padding-inline: max(var(--panel-pad-x), var(--safe-left), var(--safe-right));
+  padding-block-start: calc(var(--panel-pad-y) + var(--post) + 1.4vmin);
+  padding-block-end: calc(var(--panel-pad-y) + var(--safe-bottom) + 3.4rem + var(--rail));
+}
+
+/* --- Connector ----------------------------------------------------------- */
+
+.connector {
+  position: absolute;
+  inset-block-start: var(--hand-y, 50%);
+  inset-inline-start: var(--hand-x, 50%);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  opacity: calc(
+    clamp(0, var(--station-progress) / 0.2, 1) * clamp(0, (1 - var(--station-progress)) / 0.16, 1)
+  );
+  pointer-events: none;
+}
+
+.connector[data-side='right'] {
+  padding-inline-start: clamp(1.1rem, 2.6vmin, 2.2rem);
+}
+
+.connector[data-side='left'] {
+  flex-direction: row-reverse;
+  translate: -100% 0;
+  padding-inline-end: clamp(1.1rem, 2.6vmin, 2.2rem);
+}
+
+.connector__mark {
+  inline-size: 5px;
+  block-size: 5px;
+  rotate: 45deg;
+  background: var(--gold-300);
+  box-shadow: 0 0 0 1px rgb(10 14 20 / 35%);
+}
+
+.connector__line {
+  inline-size: clamp(2rem, 7vmin, 5.5rem);
+  block-size: 1px;
+  background: linear-gradient(to right, var(--gold-300), transparent);
+  scale: var(--e) 1;
+  transform-origin: left center;
+}
+
+.connector[data-side='left'] .connector__line {
+  background: linear-gradient(to left, var(--gold-300), transparent);
+  transform-origin: right center;
+}
+
+.stage[data-mode='stacked'] .connector {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    will-change: auto;
+  }
+}

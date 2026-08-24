@@ -1,0 +1,110 @@
+.tree {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: clamp(0.4rem, 1.2vmin, 0.85rem);
+}
+
+.tree__svg {
+  flex: 0 1 auto;
+  inline-size: 100%;
+  max-inline-size: 26rem;
+  min-block-size: 0;
+  block-size: auto;
+  overflow: visible;
+}
+
+/* The tree grows a level at a time, and un-grows on the way back. */
+.tree__node,
+.tree__edges line {
+  --in: clamp(0, calc((var(--r) * 5.4 - var(--d) * 1.15) * 1.4), 1);
+
+  opacity: var(--in);
+}
+
+.tree__edges line {
+  stroke: var(--pane-rule-strong);
+  stroke-width: 1.25;
+  stroke-dasharray: 200;
+  stroke-dashoffset: calc(200 - var(--in) * 200);
+}
+
+.tree__ring {
+  fill: none;
+  stroke: var(--pane-rule-strong);
+  stroke-width: 1.25;
+}
+
+.tree__disc {
+  fill: color-mix(in oklab, var(--pane-accent) 14%, transparent);
+  stroke: var(--pane-accent);
+  stroke-width: 1.5;
+}
+
+.tree__value {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-variant-numeric: lining-nums tabular-nums;
+  fill: var(--pane-strong);
+}
+
+.tree__node[data-prime='true'] .tree__value {
+  font-weight: 700;
+}
+
+.tree__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.16em 0.34em;
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  color: var(--pane-strong);
+  font-variant-numeric: lining-nums;
+  opacity: clamp(0, calc((var(--r) - 0.62) * 4), 1);
+}
+
+.tree__eq {
+  color: var(--pane-muted);
+  font-size: 0.75em;
+}
+
+.tree__power sup {
+  font-size: 0.55em;
+  vertical-align: super;
+  line-height: 0;
+  margin-inline-start: 0.02em;
+}
+
+.tree__dot {
+  display: inline-block;
+  inline-size: 4px;
+  block-size: 4px;
+  border-radius: 50%;
+  background: var(--pane-accent);
+  margin-inline-end: 0.34em;
+  translate: 0 -0.28em;
+}
+
+.tree__note {
+  font-size: var(--step--1);
+  color: var(--pane-muted);
+  text-align: center;
+  opacity: clamp(0, calc((var(--r) - 0.76) * 4.5), 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tree__node,
+  .tree__edges line,
+  .tree__result,
+  .tree__note {
+    --in: 1;
+
+    opacity: 1;
+  }
+
+  .tree__edges line {
+    stroke-dashoffset: 0;
+  }
+}

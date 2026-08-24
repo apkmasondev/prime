@@ -1,0 +1,56 @@
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 3vmin, 1.8rem);
+  background: var(--ink-900);
+  transition:
+    opacity 620ms var(--curve-out),
+    visibility 0s linear 620ms;
+}
+
+.loader[data-done='true'] {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.loader__marks {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(0.7rem, 3vmin, 1.6rem);
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  font-variant-numeric: lining-nums;
+  color: var(--on-film);
+}
+
+.loader__mark {
+  opacity: 0.16;
+  translate: 0 0.2em;
+  transition:
+    opacity 420ms var(--curve-out),
+    translate 420ms var(--curve);
+}
+
+.loader__mark[data-on='true'] {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.loader__label {
+  font-size: var(--step--2);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--paper-000) 42%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader__mark {
+    transition-duration: 1ms;
+    translate: 0 0;
+  }
+}

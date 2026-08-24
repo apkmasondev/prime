@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.work/
+test-results/
+playwright-report/
+.local-reference/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log

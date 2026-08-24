@@ -1,0 +1,15 @@
+{
+  "name": "PRIME — A Short Walk Through Infinity",
+  "short_name": "PRIME",
+  "description": "An interactive journey through prime numbers.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e1319",
+  "theme_color": "#0e1319",
+  "icons": [
+    { "src": "./favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

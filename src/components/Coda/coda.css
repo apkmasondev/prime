@@ -1,0 +1,106 @@
+.coda {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  opacity: var(--outro, 0);
+  pointer-events: none;
+}
+
+.coda::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgb(8 11 15 / 74%) 0%,
+    rgb(8 11 15 / 42%) 30%,
+    transparent 52%
+  );
+}
+
+.coda__block {
+  position: relative;
+  padding-inline-start: max(var(--gutter), var(--safe-left));
+  padding-inline-end: var(--gutter);
+  max-inline-size: min(42ch, 44vw);
+  translate: calc((1 - var(--outro, 0)) * -1.2rem) 0;
+}
+
+.coda__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  font-size: var(--step--2);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--on-film-muted);
+  margin-block-end: clamp(0.5rem, 1.6vmin, 1rem);
+}
+
+.coda__rule {
+  inline-size: clamp(1.5rem, 4vmin, 3rem);
+  block-size: 1px;
+  background: var(--gold-400);
+}
+
+.coda__line {
+  font-family: var(--font-display);
+  font-size: var(--step-3);
+  line-height: 1.06;
+  color: var(--on-film);
+  text-wrap: balance;
+}
+
+.coda__line--second {
+  font-style: italic;
+  color: var(--gold-300);
+}
+
+.coda__tail {
+  margin-block-start: clamp(0.8rem, 2.4vmin, 1.6rem);
+  padding-block-start: clamp(0.6rem, 1.6vmin, 1.1rem);
+  border-block-start: 1px solid rgb(250 248 243 / 22%);
+  font-size: var(--step--1);
+  color: var(--on-film-muted);
+  text-wrap: pretty;
+}
+
+/* Stacked: the closing words move onto the paper field so the final pose is
+   never covered. */
+.stage[data-mode='stacked'] .coda {
+  inset-block-start: var(--film-box-h, 50%);
+  align-items: center;
+}
+
+.stage[data-mode='stacked'] .coda::before {
+  background: none;
+}
+
+.stage[data-mode='stacked'] .coda__block {
+  max-inline-size: none;
+  padding-block-end: 2.6rem;
+  padding-inline: max(var(--gutter), var(--safe-left));
+  translate: 0 calc((1 - var(--outro, 0)) * 0.9rem);
+}
+
+.stage[data-mode='stacked'] .coda__eyebrow {
+  color: var(--text-muted);
+}
+
+.stage[data-mode='stacked'] .coda__rule {
+  background: var(--gold-500);
+}
+
+.stage[data-mode='stacked'] .coda__line {
+  color: var(--text-strong);
+}
+
+.stage[data-mode='stacked'] .coda__line--second {
+  color: var(--gold-500);
+}
+
+.stage[data-mode='stacked'] .coda__tail {
+  color: var(--text-muted);
+  border-block-start-color: var(--rule);
+}
