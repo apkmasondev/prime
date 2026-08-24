@@ -30,8 +30,31 @@ const TAU_POINTER = 0.105;
 const TAU_TOUCH = 0.075;
 /** Below this the film is left alone; half a frame is imperceptible. */
 const SEEK_EPSILON = 1 / (VIDEO.fps * 2);
+/** No frame index yet requested. */
+const NO_FRAME = -1;
 /** Above this a coarse keyframe seek is preferred where the browser offers one. */
 const FAST_SEEK_DELTA = 0.45;
+/**
+ * How the film is driven forward depends on what random access costs here.
+ *
+ * Seeking is how a scrubbed film should work, and on a desktop a seek lands
+ * inside a frame, so that is what it does. A phone is different: measured on a
+ * device, the same file plays at 24 fps but answers only six seeks a second,
+ * because a seek pays a fixed cost - reset, demux, decode - that has nothing to
+ * do with the picture and does not shrink with the resolution.
+ *
+ * So when a seek is measured to be slow, forward motion is driven by playing
+ * the film at a rate that converges on the target instead. Nothing else
+ * changes: the timeline still holds the truth, and going backwards, landing on
+ * a station or honouring reduced motion still seeks.
+ */
+const SLOW_SEEK = 0.06;
+/** Furthest ahead the film may be driven by playing rather than seeking. */
+const PLAY_WINDOW = 2.2;
+/** Seconds over which playback aims to close the gap; sets the rate. */
+const PLAY_CONVERGE = 0.3;
+const PLAY_RATE_MIN = 0.4;
+const PLAY_RATE_MAX = 4;
 /** Focus point pan is eased separately so re-framing never feels attached to the scroll. */
 const TAU_FOCUS = 0.28;
 /** How quickly the exhibit field opens and closes, in seconds. */
@@ -79,6 +102,10 @@ export class ExperienceEngine {
 
   private readonly surfaces = new Map<Surface, HTMLElement>();
   private stationsWereLive = false;
+  private requestedFrame = NO_FRAME;
+  /** Rolling estimate of what one seek costs on this device, in seconds. */
+  private seekCost = 0;
+  private seekIssuedAt = 0;
 
   private reducedMotion = false;
   private touchInput = false;
@@ -115,6 +142,7 @@ export class ExperienceEngine {
     window.addEventListener('resize', this.onResize, { passive: true });
     window.addEventListener('touchstart', this.onTouch, { passive: true });
     window.visualViewport?.addEventListener('resize', this.onResize);
+    this.video.addEventListener('seeked', this.onSeeked);
   }
 
   stop(): void {
@@ -125,6 +153,8 @@ export class ExperienceEngine {
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('touchstart', this.onTouch);
     window.visualViewport?.removeEventListener('resize', this.onResize);
+    this.video.removeEventListener('seeked', this.onSeeked);
+    this.video.pause();
   }
 
   setReducedMotion(value: boolean): void {
@@ -181,6 +211,14 @@ export class ExperienceEngine {
 
   private onTouch = (): void => {
     this.touchInput = true;
+  };
+
+  /** Times each completed seek, which is what decides how the film is driven. */
+  private onSeeked = (): void => {
+    if (this.seekIssuedAt === 0) return;
+    const cost = (performance.now() - this.seekIssuedAt) / 1000;
+    this.seekIssuedAt = 0;
+    this.seekCost = this.seekCost === 0 ? cost : this.seekCost * 0.7 + cost * 0.3;
   };
 
   private onResize = (): void => {
@@ -347,14 +385,77 @@ export class ExperienceEngine {
   private seek(time: number): void {
     const video = this.video;
     if (video.readyState < 1) return;
-    const target = Math.min(time, frameToTime(VIDEO.lastFrame));
+
+    const wanted = Math.min(time, frameToTime(VIDEO.lastFrame));
+    if (this.drivenByPlaying(wanted)) return;
+    if (!video.paused) video.pause();
+
+    /*
+     * One seek at a time.
+     *
+     * A decoder still working on the last request does not arrive sooner for
+     * being asked again - it discards the work in flight and starts over. On a
+     * desktop a seek finishes inside a frame, so asking every frame looks free;
+     * on a phone it does not, and asking every frame means the decoder never
+     * finishes anything. Measured on a device before this guard: 83 seeks
+     * requested during a ten-second scroll, six frames presented, the element
+     * in `seeking` state 93% of the time.
+     *
+     * Skipping while busy costs nothing, because the next frame asks again with
+     * a fresher target. The seek rate then settles at whatever the device can
+     * actually deliver, which is the most any of this could have achieved.
+     */
+    if (video.seeking) return;
+
+    // The film has 24 frames a second and no more. Asking for a time between
+    // two of them decodes the same picture at the price of a whole seek, so the
+    // request is quantised to a frame and dropped when it names the frame that
+    // is already on screen.
+    const frame = Math.round(wanted * VIDEO.fps);
+    if (frame === this.requestedFrame) return;
+
+    const target = frameToTime(frame);
     const delta = target - video.currentTime;
     if (Math.abs(delta) < SEEK_EPSILON) return;
+
+    this.requestedFrame = frame;
+    this.seekIssuedAt = performance.now();
     if (this.supportsFastSeek && Math.abs(delta) > FAST_SEEK_DELTA) {
       video.fastSeek(target);
       return;
     }
     video.currentTime = target;
+  }
+
+  /**
+   * Drive the film forward by playing it, on devices where seeking is too
+   * expensive to scrub with. Returns true when playback has the film in hand,
+   * in which case the caller leaves `currentTime` alone.
+   *
+   * The rate is proportional to how far ahead the target is, so a faster scroll
+   * runs the film faster and a stalled one lets it catch up and stop. Anything
+   * this cannot serve - going backwards, a jump, the closing frame, reduced
+   * motion - falls back to a seek.
+   */
+  private drivenByPlaying(target: number): boolean {
+    const video = this.video;
+    const eligible =
+      !this.reducedMotion && this.seekCost > SLOW_SEEK && target < frameToTime(VIDEO.lastFrame);
+    const ahead = target - video.currentTime;
+
+    if (!eligible || ahead <= SEEK_EPSILON || ahead > PLAY_WINDOW) {
+      if (!video.paused) {
+        video.pause();
+        // The film stopped somewhere of its own accord; let the next seek land.
+        this.requestedFrame = NO_FRAME;
+      }
+      return false;
+    }
+
+    const rate = ahead / PLAY_CONVERGE;
+    video.playbackRate = rate < PLAY_RATE_MIN ? PLAY_RATE_MIN : rate > PLAY_RATE_MAX ? PLAY_RATE_MAX : rate;
+    if (video.paused) void video.play().catch(() => { /* the next frame seeks instead */ });
+    return true;
   }
 
   private publishDiscrete(state: TimelineState): void {

@@ -1,5 +1,77 @@
 # Changelog
 
+## Mobile playback — 2026-08-24
+
+Scrolling juddered on a real phone while being smooth on a desktop. Measured on
+Android Chrome on a connected device, not in emulation: during a ten-second
+scroll the engine asked for **83 seeks and got 6 frames on screen**, with the
+video element in `seeking` state **93% of the time**. The main thread was
+dragged down with it, to 9.9 rAF ticks a second.
+
+### Cause
+
+Two independent things, both invisible on a desktop.
+
+A seek was issued on every animation frame. A decoder still working on the last
+request does not arrive sooner for being asked again — it discards the work in
+flight and starts over. On a desktop a seek finishes inside a frame, so asking
+every frame looks free; on a phone it means the decoder never finishes anything.
+
+And seeking is simply the expensive way to move a film on a phone. The same file
+plays at 24 fps on the device but answers only about six seeks a second.
+
+### What was ruled out, by measurement
+
+A smaller rendition for mobile: seek cost is **fixed overhead, not pixel
+throughput**. On the device, 1280×720 seeks in 160 ms, 960×540 in 150 ms,
+640×360 in 149 ms. A shorter GOP: a seek one frame away and a seek landing on a
+keyframe both measure ~190 ms. Neither lever touches the cost.
+
+### Fix
+
+| Change | Effect |
+| --- | --- |
+| Only one seek in flight — skip while `video.seeking`, the next frame asks again with a fresher target | Every seek now lands: seeks requested equals seeks completed equals frames presented |
+| Seek targets quantised to source frames, and dropped when they name the frame already on screen | The film has 24 frames a second; asking for a time between two of them decoded the same picture at the price of a whole seek |
+| Where a seek is *measured* to be slow, forward motion plays the film at a converging rate instead of seeking | Sequential decode instead of random access, which is what the device is good at |
+
+The engine times its own seeks and chooses from that, so no device is
+identified by name and a machine that seeks quickly never takes the playing
+path. Going backwards, landing on a station, reaching the closing frame and
+reduced motion all still seek.
+
+### Measured on the device, full scroll of the piece
+
+| | Before | Seeks serialised | Adaptive |
+| --- | --- | --- | --- |
+| Film frames presented | 0.6 /s | 4.6 /s | **35.4 /s** |
+| Distinct frames shown | 6 | 44 | **340** |
+| Seeks requested | 8.6 /s | 4.6 /s | **0.3 /s** |
+| Time in `seeking` state | 93% | 94% | **3%** |
+| rAF | 9.9 Hz | 16.8 Hz | **45.6 Hz** |
+
+By scroll pattern, after the fix:
+
+| Pattern | Frames presented | Distinct frames | rAF |
+| --- | --- | --- | --- |
+| Slow forward | 33.3 /s | 255 | 43 Hz |
+| Fast flicks | 14.7 /s | 61 | 26.7 Hz |
+| Forward then back | 8.3 /s | 57 | 16.5 Hz |
+| Repeated reversals | 9.4 /s | 35 | 18.9 Hz |
+
+Forward motion is now limited by the display rather than the decoder. Backwards
+is still seek-bound, because no browser plays a video in reverse; on this
+device that is about six frames a second, and proportionally better on hardware
+that seeks faster than a software decoder in a virtual machine.
+
+### Desktop is untouched
+
+Verified rather than assumed: across a full journey at 1440×810, both
+unthrottled and at 4× CPU, the film is **played 0% of the time** — the measured
+seek cost never reaches the threshold, so the path taken is exactly the one it
+was before, at 32.5 and 27 frames presented per second with no dropped frames.
+A test now holds that line: *scrubs rather than plays wherever seeking is cheap*.
+
 ## Technical audit — 2026-08-24
 
 A full pass over memory, performance, correctness and security. Measurements

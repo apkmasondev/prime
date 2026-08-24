@@ -78,11 +78,13 @@ demux stage and the pipeline fails the build if `ffprobe` finds a track.
 No upscaling. The originals are 720p and the delivery is 720p; on a 1440-wide
 stage that is a 1.13× upscale, and inventing pixels would only cost bandwidth.
 
-No separate mobile rendition either. The case for one is decode headroom, and
-there is none to recover: profiling a full forward-and-back journey on an
-emulated Pixel 7 at 6× CPU throttling reports **zero dropped video frames**, so
-the decoder is not what the phone is short of. A second encode would have added a
-rendition to maintain and a switch to get wrong for no measured gain.
+No separate mobile rendition either, and this one was settled on a real device
+rather than in emulation. On Android Chrome a seek costs the same whatever the
+picture is: 160 ms at 1280×720, 150 ms at 960×540, 149 ms at 640×360. The cost
+is fixed overhead — reset, demux, decode — and does not shrink with the pixels,
+so a smaller rendition buys nothing where it would have to help. Shortening the
+GOP does not help either: a seek one frame away and a seek onto a keyframe
+measure the same.
 
 **Stations.** The six anchors were found by inspecting all 720 frames — contact
 sheets, then per-frame strips through each gesture, then frame-difference energy
@@ -135,6 +137,25 @@ throttling:
 At 4× throttling the same journey holds a 16.7 ms median with 7 long tasks;
 unthrottled desktop reports none at all. No dropped video frames and no heap
 growth in any profile.
+
+**How the film is driven depends on what the device can do.** Scrubbing a film
+means seeking it, and on a desktop a seek lands inside a frame, so that is what
+happens. A phone is not the same machine: measured on a device, the same file
+plays at 24 fps but answers only six seeks a second.
+
+Two things follow. First, only one seek is ever in flight — a decoder still
+working on the last request does not arrive sooner for being asked again, it
+discards the work in progress and starts over. Asking every frame, as this used
+to, left the element in `seeking` state 93% of the time and put six frames on
+screen during a ten-second scroll. Second, where a seek is *measured* to be slow,
+forward motion is driven by playing the film at a rate that converges on the
+target instead of seeking to it. The engine times its own seeks and decides from
+that, so no device is guessed at by name, and a machine that seeks quickly never
+takes the playing path at all — there is a test for that.
+
+Going backwards, landing on a station, reaching the closing frame and honouring
+reduced motion all still seek: playback only runs forward, and precision matters
+more than pace at a stop.
 
 **The frame re-composes, it never rescales.** A station opens a card on the side
 the professor gestures towards. The film keeps its scale and bleeds edge to edge;

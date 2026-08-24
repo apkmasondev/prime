@@ -321,6 +321,40 @@ test('announces each number once, with its divisor count', async ({ page }) => {
   expect(tree, 'the numeral is being announced twice').not.toContain('22, 2 divisors');
 });
 
+/**
+ * The film is driven by playing it only where seeking is measured to be too
+ * expensive to scrub with. Everywhere a seek lands inside a frame - which is
+ * every desktop - it must still be a scrubbed film and never a played one.
+ */
+test('scrubs rather than plays wherever seeking is cheap', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'the guarantee is about fast-seeking devices');
+  await ready(page);
+
+  const observed = await page.evaluate(async () => {
+    const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+    const video = document.querySelector<HTMLVideoElement>('.film__video');
+    let playing = 0;
+    let samples = 0;
+    const watch = setInterval(() => {
+      samples += 1;
+      if (video && !video.paused) playing += 1;
+    }, 16);
+
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    for (let y = 0; y <= max; y += 90) { window.scrollTo(0, y); await sleep(8); }
+    await sleep(200);
+    for (let y = max; y >= 0; y -= 90) { window.scrollTo(0, y); await sleep(8); }
+    await sleep(200);
+
+    clearInterval(watch);
+    return { playing, samples, paused: video?.paused ?? true };
+  });
+
+  expect(observed.samples).toBeGreaterThan(50);
+  expect(observed.playing, 'the film was played on a device that seeks quickly').toBe(0);
+  expect(observed.paused).toBe(true);
+});
+
 test('ships no audio track and no horizontal scroll', async ({ page }) => {
   await ready(page);
 
