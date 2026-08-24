@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { EngineContext } from './ExperienceContext';
 import { ExperienceEngine } from './timeline/engine';
 import { TOTAL_SCROLL_SCREENS } from './timeline/timeline';
@@ -21,6 +21,10 @@ export function Experience(): React.JSX.Element {
   const [engine, setEngine] = useState<ExperienceEngine | null>(null);
   const [ready, setReady] = useState(false);
   const reducedMotion = useReducedMotion();
+
+  // Stable, so the loader's effect - and the timer that caps how long it may
+  // hold the door - is set up once rather than restarted on every render.
+  const onReady = useCallback(() => { setReady(true); }, []);
 
   useLayoutEffect(() => {
     const stage = stageRef.current;
@@ -83,11 +87,7 @@ export function Experience(): React.JSX.Element {
         ) : null}
       </div>
 
-      <Loader
-        videoRef={videoRef}
-        onReady={() => { setReady(true); }}
-        expectedDuration={VIDEO.frames / VIDEO.fps}
-      />
+      <Loader videoRef={videoRef} onReady={onReady} expectedDuration={VIDEO.frames / VIDEO.fps} />
     </>
   );
 }

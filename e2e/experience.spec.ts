@@ -194,6 +194,133 @@ test('shows the opening and the closing, whatever the layout', async ({ page }) 
     .toBe(true);
 });
 
+/**
+ * The reversibility claim, checked rather than assumed. Everything the stations
+ * draw is derived from progress, so revisiting a station after hammering the
+ * timeline must reproduce it exactly - including the Ulam spiral, which is the
+ * one diagram painted imperatively onto a canvas and therefore the one that
+ * could drift.
+ */
+test('returns every diagram to an identical state after a hammered reverse', async ({ page }) => {
+  // Twelve settles and two full passes: long by nature, so it gets its own budget.
+  test.setTimeout(150_000);
+  await ready(page);
+
+  /** Wait until the loop has genuinely come to rest, not merely paused. */
+  const settle = async (id: (typeof STATIONS)[number]): Promise<void> => {
+    await page.locator('.index__stop').nth(STATIONS.indexOf(id)).click();
+    await expect(page.locator('.stage')).toHaveAttribute('data-station', id);
+    await page.evaluate(() => { (window as unknown as { __sp?: string[] }).__sp = []; });
+    await page.waitForFunction(
+      () => {
+        const layer = document.querySelector('.station-layer');
+        if (!layer) return false;
+        const history = (window as unknown as { __sp: string[] }).__sp;
+        history.push(getComputedStyle(layer).getPropertyValue('--station-progress'));
+        if (history.length > 4) history.shift();
+        return history.length === 4 && new Set(history).size === 1;
+      },
+      null,
+      { polling: 150 },
+    );
+  };
+
+  const snapshot = async (): Promise<string> =>
+    page.evaluate(() => {
+      const active = document.querySelector('.panel[data-active="true"]');
+      const canvas = active?.querySelector<HTMLCanvasElement>('.ulam__canvas');
+      let ulam = 'none';
+      if (canvas) {
+        const pixels = canvas.getContext('2d')?.getImageData(0, 0, canvas.width, canvas.height).data;
+        let hash = 2166136261;
+        let ink = 0;
+        for (let i = 3; i < (pixels?.length ?? 0); i += 4) {
+          const alpha = pixels?.[i] ?? 0;
+          if (alpha > 8) ink += 1;
+          hash = Math.imul(hash ^ alpha, 16777619) >>> 0;
+        }
+        ulam = `${String(ink)}/${String(hash)}`;
+      }
+      const opacities = (selector: string): string =>
+        [...(active?.querySelectorAll(selector) ?? [])]
+          .map((el) => Math.round(Number(getComputedStyle(el).opacity) * 1000))
+          .join(',');
+      return [
+        ulam,
+        opacities('.sieve__strike'),
+        opacities('.tree__node'),
+        opacities('.primes__cell'),
+        opacities('.euclid__step'),
+      ].join(' | ');
+    });
+
+  const forward: Record<string, string> = {};
+  for (const id of STATIONS) {
+    await settle(id);
+    forward[id] = await snapshot();
+  }
+
+  for (let pass = 0; pass < 2; pass += 1) {
+    await page.evaluate(async () => {
+      const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      for (let y = 0; y <= max; y += 140) { window.scrollTo(0, y); await sleep(6); }
+      for (let y = max; y >= 0; y -= 140) { window.scrollTo(0, y); await sleep(6); }
+    });
+  }
+
+  for (const id of [...STATIONS].reverse()) {
+    await settle(id);
+    expect(await snapshot(), `${id} did not come back to the same state`).toBe(forward[id]);
+  }
+});
+
+test('holds a composed frame at each station when motion is reduced', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await ready(page);
+
+  for (const id of STATIONS) {
+    await goTo(page, id);
+    const phase = await page.evaluate(() => {
+      const stage = document.querySelector('.stage');
+      return { start: stage?.getAttribute('data-phase') ?? '' };
+    });
+    expect(phase.start).toBe('station');
+
+    // Three points inside the same station must present the same frame.
+    const frames = await page.evaluate(async () => {
+      const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+      const video = document.querySelector<HTMLVideoElement>('.film__video');
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const here = window.scrollY;
+      const out: number[] = [];
+      for (const offset of [-0.012, 0, 0.012]) {
+        window.scrollTo(0, Math.min(max, Math.max(0, here + max * offset)));
+        await sleep(420);
+        out.push(Math.round((video?.currentTime ?? 0) * 24));
+      }
+      return out;
+    });
+    expect(new Set(frames).size, `${id} scrubbed instead of holding: ${frames.join(',')}`).toBe(1);
+  }
+});
+
+test('announces each number once, with its divisor count', async ({ page }) => {
+  await ready(page);
+  await goTo(page, 'prime');
+
+  // The accessibility tree, not textContent: the visible numeral is hidden from
+  // it precisely so the number is not announced twice.
+  const grid = page.locator('.panel[data-station="prime"] .primes__grid');
+  const tree = await grid.ariaSnapshot();
+
+  expect(tree).toContain('1, 1 divisor.');
+  expect(tree).toContain('2, 2 divisors, prime.');
+  expect(tree).toContain('4, 3 divisors.');
+  expect(tree, 'the numeral is being announced twice').not.toContain('11, 1 divisor');
+  expect(tree, 'the numeral is being announced twice').not.toContain('22, 2 divisors');
+});
+
 test('ships no audio track and no horizontal scroll', async ({ page }) => {
   await ready(page);
 

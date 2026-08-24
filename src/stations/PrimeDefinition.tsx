@@ -57,7 +57,9 @@ export function PrimeDefinition({ active }: { active: boolean }): React.JSX.Elem
               onPointerEnter={() => { setSelected(cell.n); }}
               onFocus={() => { setSelected(cell.n); }}
             >
-              <span className="primes__n">{cell.n}</span>
+              <span className="primes__n" aria-hidden="true">
+                {cell.n}
+              </span>
               <span className="primes__dots" aria-hidden="true">
                 {Array.from({ length: Math.min(cell.divisorCount, 6) }, (_, k) => (
                   <span key={k} className="primes__dot" />
@@ -65,7 +67,7 @@ export function PrimeDefinition({ active }: { active: boolean }): React.JSX.Elem
                 {cell.divisorCount > 6 ? <span className="primes__more">+</span> : null}
               </span>
               <span className="visually-hidden">
-                {cell.n}: {cell.divisorCount} divisor{cell.divisorCount === 1 ? '' : 's'}
+                {cell.n}, {cell.divisorCount} divisor{cell.divisorCount === 1 ? '' : 's'}
                 {cell.prime ? ', prime' : ''}. {cell.detail}
               </span>
             </button>

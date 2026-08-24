@@ -187,7 +187,13 @@ export function filmToStage(fit: StageFit, point: VideoPoint): { x: number; y: n
   };
 }
 
-/** True when the film point is inside the visible window, with a normalised margin. */
+/**
+ * True when the film point is inside the visible window, with a normalised
+ * margin. Nothing in the running experience asks this - the composition is
+ * arranged by `fitStage` rather than checked afterwards - but it is how the
+ * test suite states that module's central invariant, so it lives beside the
+ * geometry it describes rather than being restated in the tests.
+ */
 export function isVisible(fit: StageFit, point: VideoPoint, margin = 0): boolean {
   return (
     point.x >= fit.visibleX0 + margin &&

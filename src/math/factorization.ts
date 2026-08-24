@@ -60,14 +60,3 @@ export function factorTree(n: number): FactorNode {
   };
   return build(n, 0);
 }
-
-/** Every node of the tree in reveal order. */
-export function flattenTree(root: FactorNode): FactorNode[] {
-  const out: FactorNode[] = [];
-  const walk = (node: FactorNode): void => {
-    out.push(node);
-    for (const child of node.children) walk(child);
-  };
-  walk(root);
-  return out.sort((a, b) => a.order - b.order);
-}

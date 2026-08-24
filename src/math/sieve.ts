@@ -44,22 +44,3 @@ export function sieve(limit: number): SieveResult {
 
   return { limit: bound, primes, steps, sqrtBound };
 }
-
-/**
- * The state of the grid after `stepCount` complete elimination steps.
- * `stepCount` is clamped, so callers can drive this straight from a scroll
- * position in either direction.
- */
-export function sieveStateAt(result: SieveResult, stepCount: number): {
-  readonly struck: ReadonlySet<number>;
-  readonly activePrime: number | null;
-} {
-  const n = Math.max(0, Math.min(result.steps.length, Math.floor(stepCount)));
-  const struck = new Set<number>();
-  for (let i = 0; i < n; i += 1) {
-    const step = result.steps[i];
-    if (!step) continue;
-    for (const m of step.removed) struck.add(m);
-  }
-  return { struck, activePrime: result.steps[n]?.prime ?? null };
-}

@@ -86,10 +86,15 @@ rendition to maintain and a switch to get wrong for no measured gain.
 
 **Stations.** The six anchors were found by inspecting all 720 frames — contact
 sheets, then per-frame strips through each gesture, then frame-difference energy
-to locate the steadiest hold within it. Anchors sit on measured motion minima,
-not at convenient fractions of a clip. Gesture side, hand position and the
-professor's bounds are normalised film coordinates in
-`src/experience/timeline/stations.ts`.
+to locate the steadiest hold within it. None is a convenient fraction of a clip.
+
+Where the footage offers a genuine stop, the anchor is the measured minimum of
+its hold: stations 2, 4 and 5 sit at rank 0, 1 and 0 of their windows, in the
+14th, 4th and 15th percentile of motion across the whole film. Stations 1 and 3
+are gestures made *while walking* — there is no still moment in them — so those
+anchors are the clearest pose within the hold rather than its quietest frame.
+Gesture side, hand position and the professor's bounds are normalised film
+coordinates in `src/experience/timeline/stations.ts`.
 
 Station three is the one stop where he turns his head instead of pointing. What
 he turns towards is a blackboard, so that station is a slate plate with an oak
@@ -107,9 +112,10 @@ that number. Nothing is keyed on "has this played yet", which is why the walk
 reads the same backwards as forwards.
 
 **One loop.** A single `requestAnimationFrame` loop smooths progress, seeks the
-video, and writes a handful of CSS custom properties. React renders when the
-*station* changes — six times in fourteen screens of scroll — never per frame.
-Stations animate from `--station-progress` in CSS.
+video, and writes a handful of CSS custom properties. React is told only when
+something discrete changes — the phase, the station, or the layout mode — which
+is **12 times per pass**, once per phase boundary, and never per frame. Stations
+animate from `--station-progress` in CSS.
 
 **Properties are written per surface, not on the stage.** Custom properties
 inherit, so writing one at the top of the tree marks every descendant for style
@@ -147,10 +153,12 @@ already played.
 
 **Accessibility.** The film is decorative; the lesson is text. Every diagram
 carries a written equivalent, the index is keyboard-operable with visible focus,
-nothing is conveyed by colour alone (primes are marked by weight, rule and dot
-count as well as tint), and `prefers-reduced-motion` settles the film on composed
-frames instead of scrubbing. There is a no-JavaScript fallback with the whole
-lesson in it.
+nothing is conveyed by colour alone (primes are marked by weight, border style
+and dot count as well as tint), and `prefers-reduced-motion` holds the film on
+one composed frame for the whole of each station instead of scrubbing through
+it — the walk between stations still follows the scroll, because freezing it
+would teleport the professor rather than calm him. There is a no-JavaScript
+fallback with the whole lesson in it.
 
 ---
 

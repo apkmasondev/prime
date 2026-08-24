@@ -57,12 +57,3 @@ export function primesBetween(from: number, to: number): number[] {
   }
   return out;
 }
-
-/** Twin-prime pairs `(p, p + 2)` with both members inside `[2, limit]`. */
-export function twinPrimes(limit: number): [number, number][] {
-  const out: [number, number][] = [];
-  for (const p of primesBetween(2, limit - 2)) {
-    if (isPrime(p + 2)) out.push([p, p + 2]);
-  }
-  return out;
-}

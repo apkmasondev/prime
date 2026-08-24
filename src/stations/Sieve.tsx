@@ -16,6 +16,7 @@ const ORDER: readonly { readonly n: number; readonly by: number }[] = RESULT.ste
 );
 
 const REMOVAL_INDEX = new Map<number, number>(ORDER.map((entry, i) => [entry.n, i]));
+const PRIMES = new Set<number>(RESULT.primes);
 const TOTAL = ORDER.length;
 
 /** Which prime is doing the striking at a given point in the sequence. */
@@ -39,7 +40,7 @@ export function Sieve({ active }: { active: boolean }): React.JSX.Element {
         {Array.from({ length: LIMIT }, (_, i) => {
           const n = i + 1;
           const removedAt = REMOVAL_INDEX.get(n);
-          const prime = RESULT.primes.includes(n);
+          const prime = PRIMES.has(n);
           return (
             <li
               key={n}

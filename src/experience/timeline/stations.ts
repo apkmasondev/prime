@@ -53,7 +53,7 @@ export const STATIONS: readonly Station[] = [
       text: '2 is the only even prime — every other even number has 2 as a third divisor.',
     },
     diagramSummary:
-      'The numbers 1 to 24. Primes are marked with a filled disc; composite numbers open into their factor pairs; 1 stands apart because it has only one divisor.',
+      'The numbers 1 to 18, each carrying one mark per positive divisor. Primes carry exactly two; 1 carries a single mark, which is why it is not prime; selecting a number reads out its factor pairs.',
     gesture: 'point-right',
     side: 'right',
     surface: 'paper',

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { divisors, factorPairs, isPrime, primesBetween, twinPrimes } from './primes';
-import { sieve, sieveStateAt } from './sieve';
-import { factorTree, flattenTree, primeFactors, primePowers } from './factorization';
+import { divisors, factorPairs, isPrime, primesBetween } from './primes';
+import { sieve } from './sieve';
+import { factorTree, primeFactors, primePowers, type FactorNode } from './factorization';
 import { ulamPosition, ulamRadius, ulamSpiral } from './ulam';
 
 const PRIMES_UNDER_100 = [
@@ -71,19 +71,6 @@ describe('primesBetween and twinPrimes', () => {
     expect(primesBetween(10, 30)).toEqual([11, 13, 17, 19, 23, 29]);
     expect(primesBetween(-5, 3)).toEqual([2, 3]);
   });
-
-  it('finds the twin primes with both members at or below the limit', () => {
-    expect(twinPrimes(60)).toEqual([
-      [3, 5],
-      [5, 7],
-      [11, 13],
-      [17, 19],
-      [29, 31],
-      [41, 43],
-    ]);
-    // 61 is outside the limit, so (59, 61) only appears once the limit reaches it.
-    expect(twinPrimes(61)).toContainEqual([59, 61]);
-  });
 });
 
 describe('sieve', () => {
@@ -119,21 +106,34 @@ describe('sieve', () => {
     expect(all.length + r.primes.length + 2).toBe(101); // + 0 and 1
   });
 
-  it('replays to a stable state in both directions', () => {
+  it('strikes in one fixed order, so scrolling back is exact', () => {
     const r = sieve(100);
-    expect(sieveStateAt(r, 0).struck.size).toBe(0);
-    expect(sieveStateAt(r, 0).activePrime).toBe(2);
-    expect(sieveStateAt(r, 1).struck.has(4)).toBe(true);
-    expect(sieveStateAt(r, 1).struck.has(9)).toBe(false);
-    expect(sieveStateAt(r, 2).struck.has(9)).toBe(true);
-    const full = sieveStateAt(r, r.steps.length);
-    expect(full.activePrime).toBeNull();
-    for (const p of PRIMES_UNDER_100) expect(full.struck.has(p)).toBe(false);
-    // clamped, not thrown
-    expect(sieveStateAt(r, -5).struck.size).toBe(0);
-    expect(sieveStateAt(r, 999).struck.size).toBe(full.struck.size);
+    // The station numbers every strike once and animates from that index, so
+    // what makes reverse exact is that each step's removals only ever extend
+    // the sequence - never reorder or revisit it.
+    const order = r.steps.flatMap((step) => step.removed);
+    expect(new Set(order).size).toBe(order.length);
+
+    const upTo = (k: number): Set<number> => new Set(order.slice(0, k));
+    for (let k = 1; k <= order.length; k += 1) {
+      const previous = upTo(k - 1);
+      for (const n of previous) expect(upTo(k).has(n)).toBe(true);
+    }
+    for (const p of PRIMES_UNDER_100) expect(order).not.toContain(p);
+    expect(upTo(order.length).size + r.primes.length + 2).toBe(101); // + 0 and 1
   });
 });
+
+/** Depth-first walk, standing in for a helper the experience does not need. */
+function walk(root: FactorNode): FactorNode[] {
+  const out: FactorNode[] = [];
+  const visit = (node: FactorNode): void => {
+    out.push(node);
+    for (const child of node.children) visit(child);
+  };
+  visit(root);
+  return out;
+}
 
 describe('factorisation', () => {
   it('factorises the showcase number', () => {
@@ -161,7 +161,7 @@ describe('factorisation', () => {
   it('builds a tree whose leaves are exactly the prime factors', () => {
     const tree = factorTree(84);
     expect(tree.value).toBe(84);
-    const leaves = flattenTree(tree).filter((n) => n.children.length === 0);
+    const leaves = walk(tree).filter((n) => n.children.length === 0);
     expect(leaves.map((l) => l.value).sort((a, b) => a - b)).toEqual([2, 2, 3, 7]);
     for (const leaf of leaves) expect(leaf.prime).toBe(true);
   });
@@ -173,9 +173,19 @@ describe('factorisation', () => {
   });
 
   it('numbers nodes in a stable reveal order', () => {
-    const order = flattenTree(factorTree(84)).map((n) => n.order);
-    expect(order).toEqual([...order].sort((a, b) => a - b));
-    expect(new Set(order).size).toBe(order.length);
+    const order = walk(factorTree(84))
+      .map((n) => n.order)
+      .sort((a, b) => a - b);
+    expect(order).toEqual([...Array(order.length).keys()]);
+  });
+
+  it('splits every number the same way twice', () => {
+    for (const n of [84, 2, 3, 1, 0, 97, 1024, 2 ** 10 * 3 * 5, 999_983]) {
+      expect(JSON.stringify(factorTree(n))).toBe(JSON.stringify(factorTree(n)));
+    }
+    expect(factorTree(1).prime).toBe(false);
+    expect(factorTree(1024).value).toBe(1024);
+    expect(walk(factorTree(1024)).filter((x) => x.children.length === 0)).toHaveLength(10);
   });
 });
 
