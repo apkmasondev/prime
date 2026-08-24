@@ -70,6 +70,14 @@ the site is actually served from, and the page carries a canonical link and
 `og:url`. Vite's base is normalised, since that action reports the path without
 a trailing slash and Vite needs one.
 
+Pages reports that domain's URL as `http://`, because HTTPS enforcement is not
+recorded against it, so the first deploy stamped `og:image` and `og:url` over
+http on a page that is served over https — mixed content, and something a
+scraper may refuse. (The `canonical` link looked correct only because the edge
+in front of the domain rewrites `href` attributes and leaves `content` alone,
+which is what made the two disagree in the same document.) The build now forces
+https on any non-local origin.
+
 Every workflow action was one to three majors behind and has been updated:
 checkout and setup-node to v7, upload-artifact to v7, upload-pages-artifact and
 deploy-pages to v5. Gating was checked: the steps run in order, a failure fails

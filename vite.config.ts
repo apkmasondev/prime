@@ -9,8 +9,20 @@ const base = `${(process.env.BASE_PATH ?? '/').replace(/\/*$/, '')}/`;
  * Social scrapers do not resolve relative image URLs reliably, so the absolute
  * origin is stamped in at build time. CI passes the Pages URL; locally the
  * placeholder collapses to a relative path, which is right for previewing.
+ *
+ * The scheme is forced to https for anything that is not a local host. Pages
+ * reports a custom domain's URL as http until HTTPS enforcement is recorded
+ * against it, and an http image reference on a page served over https is both
+ * mixed content and something a scraper is entitled to refuse.
  */
-const siteUrl = process.env.SITE_URL ? process.env.SITE_URL.replace(/\/?$/, '/') : './';
+function absoluteSiteUrl(raw: string | undefined): string {
+  if (!raw) return './';
+  const trimmed = `${raw.replace(/\/*$/, '')}/`;
+  const local = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/)/.test(trimmed);
+  return local ? trimmed : trimmed.replace(/^http:\/\//, 'https://');
+}
+
+const siteUrl = absoluteSiteUrl(process.env.SITE_URL);
 
 const stampSiteUrl = {
   name: 'stamp-site-url',
