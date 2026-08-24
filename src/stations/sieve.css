@@ -1,4 +1,16 @@
 .sieve {
+  /*
+   * One length for both sides of the square. Writing `min(100%, ...)` twice
+   * would not do it: a percentage means the parent's width in `inline-size` and
+   * its height in `block-size`, so the two resolved differently and the grid
+   * came out oblong. Container units are absolute in either property.
+   */
+  --side: min(100cqi, 100cqb - var(--caption-space));
+  /* Room kept for the caption below the square. One line's worth: the aside is
+     dropped below the width where it would wrap, rather than every card paying
+     for a second line it does not use. */
+  --caption-space: 2.8em;
+
   display: flex;
   flex-direction: column;
   justify-content: safe center;
@@ -8,10 +20,20 @@
 .sieve__grid {
   --cursor: calc(var(--r) * (var(--total) + 6));
 
+  /*
+   * The square is stated on the grid rather than left to the cells. Cells with
+   * an aspect ratio could not shrink past their own text, so on a narrow card
+   * the grid kept its ten rows at their minimum height while its width was
+   * capped - and a hundred numbers came out as a tall thin strip.
+   */
   display: grid;
   grid-template-columns: repeat(10, minmax(0, 1fr));
-  flex: 0 1 auto;
-  inline-size: min(100%, var(--figure-cap, 100%) - 3.4em);
+  grid-template-rows: repeat(10, minmax(0, 1fr));
+  /* The side already allows for the caption, so the square is not asked to
+     shrink again by the flex line - that is what left it a few pixels oblong. */
+  flex: 0 0 auto;
+  inline-size: var(--side);
+  block-size: var(--side);
   margin-inline: auto;
   gap: 1px;
   background: var(--pane-rule);
@@ -21,11 +43,15 @@
 
 .sieve__cell {
   position: relative;
-  aspect-ratio: 1;
+  min-inline-size: 0;
+  min-block-size: 0;
   display: grid;
   place-items: center;
+  overflow: hidden;
   background: var(--pane-bg);
-  font-size: clamp(0.52rem, 1.5vmin, 0.82rem);
+  /* Sized from the square, so the numbers shrink with it instead of setting a
+     floor the grid then has to grow to satisfy. */
+  font-size: min(0.82rem, calc(var(--side) * 0.052));
   color: var(--pane-body);
 
   /* 0 while standing, 1 once this number's turn to be struck has passed. */
@@ -82,6 +108,8 @@
   font-size: var(--step--1);
   color: var(--pane-body);
   min-block-size: 2.6em;
+  max-block-size: 3.4em;
+  overflow: hidden;
   padding-block-start: 0.4em;
   border-block-start: 1px solid var(--pane-rule);
 }
@@ -94,6 +122,17 @@
 
 .sieve__caption-hint {
   color: var(--pane-muted);
+}
+
+/*
+ * Below this the caption cannot hold both clauses on one line, and a wrapped
+ * second line was being clipped against the reserve. The sentence that carries
+ * the algorithm stays; the aside goes.
+ */
+@container figure (width < 400px) {
+  .sieve__caption-hint {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

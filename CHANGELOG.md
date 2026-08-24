@@ -1,5 +1,113 @@
 # Changelog
 
+## The sieve on a phone — 2026-08-24
+
+Reported from a device: the hundred-cell grid at station two was squeezed to the
+point of being hard to read. Measuring it found three faults stacked on each
+other.
+
+**It was not square.** The cells carried `aspect-ratio: 1` and a minimum font
+size, so ten rows could not shrink below their own text. When the card capped
+the grid's width below that minimum, the width obeyed and the height did not: on
+an iPhone 14 the grid came out **60 x 136** with 5 x 12 pixel cells. The square
+is now stated on the grid itself, with explicit rows, and the numbers are sized
+from the square so they shrink with it instead of setting a floor it has to grow
+to satisfy.
+
+**Both sides were computed, but not to the same number.** Writing
+`min(100%, ...)` for `inline-size` and `block-size` does not give a square: a
+percentage means the parent's width in one and its height in the other. The side
+is now computed once, in container units, which are absolute in either property.
+
+**And it had no room.** The grid is bounded by the shorter side of the figure,
+and on a phone that was 111 px while 345 px of width sat unused. The film's share
+of a stacked stage goes from 0.44 to 0.36, the card's padding tightens, and the
+curiosity note — the one element here that is supplementary by design — gives up
+its place below the diagram and is read in the notes drawer instead, where every
+station's note already appears in full.
+
+A fourth fault surfaced while fixing those: on a landscape phone the caption
+wrapped to two lines and was clipped mid-glyph against the space reserved for it.
+The aside is now dropped below the width where it would wrap, so one line is
+always enough.
+
+| Sieve grid | Before | After |
+| --- | --- | --- |
+| Pixel 7 | 157 px, 15 px cells, 8.3 px numerals | **294 px, 29 px cells, 13.1 px** |
+| iPhone 14 | 60 x 136, oblong | **187 px square, 9.7 px** |
+| 360 x 640 | 48 x 136, oblong | **173 px square, 9 px** |
+| Landscape 844 x 390 | 120 px | **185 px** |
+| Desktop 1440 | 350 px | **416 px** |
+
+Every station gains from the same room: the figure on a Pixel 7 goes from 208 px
+to 336 px, on an iPhone 14 from 111 px to 229 px. A test now holds the sieve
+square, unclipped, and above a readable floor on both layouts.
+
+## Acceptance pass — 2026-08-24
+
+A final run against the live site, driven with real wheel and touch events
+rather than `scrollTo`, so the compositor and passive-listener paths are
+exercised the way a visitor exercises them.
+
+### Fixed
+
+**A viewport change moved the visitor to a different point in the walk.** The
+scroll length is a function of the viewport height, so the same scroll position
+means different progress after a resize. Resizing the window while reading a
+station left the station entirely — 1440×810 on station 4 became no station at
+1100×900, and a different one at 900×1000. The same mechanism applies on a
+phone every time the address bar slides away and the dynamic viewport grows.
+
+The engine now remembers the scroll length its current progress was read
+against, and on a viewport change moves the scroll position to preserve the
+progress instead of the pixels. Not while a finger is down, which would fight
+the visitor's own momentum.
+
+The first attempt at this compared the scroll length before and after
+re-measuring, which never fired: by the time any resize listener runs the
+document has already been re-laid-out, so it was comparing a value with itself.
+
+### Verified
+
+**Frame pacing**, live site, wheel-driven forward and back plus reversals, on a
+GPU-accelerated browser:
+
+| Viewport | Median | p95 | Frames over 50 ms | Long tasks | Dropped |
+| --- | --- | --- | --- | --- | --- |
+| 1366×768 | 16.7 ms (60 fps) | 16.8 ms | 1 / 493 | 0 | 0 |
+| 1440×810 | 16.7 ms (60 fps) | 16.8 ms | 3 / 493 | 0 | 0 |
+| 1920×1080 | 16.7 ms (60 fps) | 16.8 ms | 1 / 500 | 0 | 0 |
+| 2560×1080 | 16.7 ms (60 fps) | 16.8 ms | 0 / 501 | 0 | 0 |
+| Pixel 7 | 16.7 ms (60 fps) | 16.8 ms | 0 / 504 | 0 | 0 |
+| iPhone 14 | 16.7 ms (60 fps) | 16.8 ms | 0 / 484 | 0 | 0 |
+
+An earlier headless run reported 30 fps at 1920 and 2560. That was software
+compositing in headless Chromium, not something a visitor meets: the same
+viewports hold 60 fps with a GPU. Worth recording, because it is the kind of
+number that would otherwise have been believed.
+
+**Stations do not skip frames.** Creeping through each station and watching
+every presented frame: median step one source frame, no frame ever goes
+backwards while the scroll goes forwards, and the largest step is two frames.
+On the Android device, where the film is driven by playing rather than seeking,
+the same holds — and stopping dead at a station settles monotonically, with no
+backward correction as playback hands over to the final seek. The timeline's
+own easing keeps the target ahead of the film through the settle, so the
+handover never has to reverse.
+
+**Resting state at each station** on the device: paused, not seeking, on the
+frame the timeline asked for. Clicking an index stop lands 0–6 frames from the
+station's composed anchor, inside the hold window and by design — the phase is
+built around the anchor, and landing mid-station is what leaves the diagram
+half-built rather than finished.
+
+**Also checked:** resize across the side/stacked boundary keeps the station and
+the film covering the stage; browser zoom at 0.67 and 1.5 with no horizontal
+overflow; keyboard reaching every station with a visible focus ring; cold load
+with an empty cache at 0.3 s and under half a megabyte; no console output on
+any profile; no dead code, unused export, or unread private member after the
+video work.
+
 ## Mobile playback — 2026-08-24
 
 Scrolling juddered on a real phone while being smooth on a desktop. Measured on

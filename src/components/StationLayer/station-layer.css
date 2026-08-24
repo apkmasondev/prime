@@ -352,7 +352,7 @@
   }
 }
 
-@container card (height < 250px) {
+@container card (height < 340px) {
   .panel__note {
     display: none;
   }
@@ -400,6 +400,16 @@
   padding-inline: max(var(--panel-pad-x), var(--safe-left), var(--safe-right));
   padding-block-start: calc(var(--panel-pad-y) + var(--post) + 1.4vmin);
   padding-block-end: calc(var(--panel-pad-y) + var(--safe-bottom) + 3.4rem + var(--rail));
+}
+
+/*
+ * On a phone the diagram is the card. A hundred sieve cells need the full width
+ * of the sheet to stay legible, and the curiosity is the one thing here that is
+ * supplementary by design - so it yields, and is read in full in the notes
+ * drawer instead, where every station's note already appears.
+ */
+.stage[data-mode='stacked'] .panel__note {
+  display: none;
 }
 
 /* --- Connector ----------------------------------------------------------- */

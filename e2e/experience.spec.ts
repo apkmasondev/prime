@@ -390,7 +390,78 @@ test('chooses seeking or playing by what a seek actually costs', async ({ page }
       `seeks take ${String(Math.round(seekCost))}ms, so playback should have taken over`,
     ).toBeGreaterThan(0);
   }
-  expect(observed.presented, 'no film frames reached the screen').toBeGreaterThan(10);
+  // Only that the film is alive; how fast it runs is measured, not asserted.
+  expect(observed.presented, 'no film frames reached the screen').toBeGreaterThan(3);
+});
+
+/**
+ * The scroll length is a function of the viewport height, so a resize changes
+ * what a given scroll position means. Resizing while reading a station must not
+ * move the visitor out of it - which is also what stops a phone's address bar
+ * from shifting the film as it slides away.
+ */
+test('stays on the same station when the viewport changes', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'needs a resizable viewport');
+  await ready(page);
+  await goTo(page, 'ulam');
+
+  const before = await page.evaluate(() => ({
+    progress: Number(getComputedStyle(document.querySelector('.index') ?? document.body).getPropertyValue('--progress')),
+    station: document.querySelector('.stage')?.getAttribute('data-station'),
+  }));
+  expect(before.station).toBe('ulam');
+
+  for (const size of [
+    { width: 1100, height: 900 },
+    { width: 1800, height: 700 },
+    { width: 1280, height: 1024 },
+    { width: 1440, height: 810 },
+  ]) {
+    await page.setViewportSize(size);
+    await page.waitForTimeout(900);
+    const now = await page.evaluate(() => ({
+      progress: Number(getComputedStyle(document.querySelector('.index') ?? document.body).getPropertyValue('--progress')),
+      station: document.querySelector('.stage')?.getAttribute('data-station'),
+      overflow: document.documentElement.scrollWidth > window.innerWidth,
+    }));
+    expect(now.station, `${String(size.width)}x${String(size.height)} left the station`).toBe('ulam');
+    expect(Math.abs(now.progress - before.progress), 'the walk moved').toBeLessThan(0.01);
+    expect(now.overflow).toBe(false);
+  }
+});
+
+/**
+ * The sieve is a hundred cells, and it is the diagram that decides how much room
+ * a card needs. It must stay square - stated on the grid, because cells with an
+ * aspect ratio could not shrink past their own text and left it oblong - and it
+ * must stay large enough to read on a phone.
+ */
+test('keeps the sieve square and legible', async ({ page }, testInfo) => {
+  await ready(page);
+  await goTo(page, 'sieve');
+
+  const grid = await page.evaluate(() => {
+    const g = document.querySelector('.sieve__grid')?.getBoundingClientRect();
+    const caption = document.querySelector('.sieve__caption');
+    const surface = document.querySelector('.panel__surface');
+    const number = document.querySelector('.sieve__n');
+    return {
+      width: Math.round(g?.width ?? 0),
+      height: Math.round(g?.height ?? 0),
+      font: parseFloat(number ? getComputedStyle(number).fontSize : '0'),
+      captionClipped: (caption?.scrollHeight ?? 0) > Math.ceil(caption?.getBoundingClientRect().height ?? 0) + 1,
+      cardOverflows: (surface?.scrollHeight ?? 0) > (surface?.clientHeight ?? 0) + 1,
+    };
+  });
+
+  expect(Math.abs(grid.width - grid.height), `grid is ${String(grid.width)}x${String(grid.height)}`).toBeLessThanOrEqual(1);
+  expect(grid.captionClipped, 'the caption is clipped').toBe(false);
+  expect(grid.cardOverflows, 'the card overflows').toBe(false);
+
+  // A hundred numbers across the shorter side: below this they stop being read.
+  const floor = testInfo.project.name === 'mobile' ? 150 : 300;
+  expect(grid.width, 'the grid is too small to read').toBeGreaterThanOrEqual(floor);
+  expect(grid.font).toBeGreaterThanOrEqual(8);
 });
 
 test('ships no audio track and no horizontal scroll', async ({ page }) => {

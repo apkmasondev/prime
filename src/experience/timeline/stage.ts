@@ -24,10 +24,11 @@ export type LayoutMode = 'side' | 'stacked';
 /**
  * Share of stage height given to the film when the layout stacks. Kept constant
  * rather than derived from the aspect ratio, so a collapsing mobile URL bar can
- * never make the picture jump mid-scroll. 0.44 leaves the professor reading
- * clearly while giving the sheet below him room for a real diagram.
+ * never make the picture jump mid-scroll. 0.36 leaves the professor reading
+ * clearly while giving the sheet below him room for a real diagram - the sieve
+ * is a hundred cells, and it is the one that decides how much room is enough.
  */
-export const STACKED_FILM_SHARE = 0.44;
+export const STACKED_FILM_SHARE = 0.36;
 
 /** Preferred, smallest and largest widths for the exhibit field, in stage pixels. */
 const BOARD_SHARE = 0.36;

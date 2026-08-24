@@ -109,6 +109,9 @@ export class ExperienceEngine {
 
   private reducedMotion = false;
   private touchInput = false;
+  private interacting = false;
+  /** Scroll length the current target was read against. */
+  private scrollSpan = 1;
   private supportsFastSeek: boolean;
 
   constructor(stage: HTMLElement, video: HTMLVideoElement) {
@@ -141,6 +144,8 @@ export class ExperienceEngine {
     window.addEventListener('scroll', this.onScroll, { passive: true });
     window.addEventListener('resize', this.onResize, { passive: true });
     window.addEventListener('touchstart', this.onTouch, { passive: true });
+    window.addEventListener('touchend', this.onTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', this.onTouchEnd, { passive: true });
     window.visualViewport?.addEventListener('resize', this.onResize);
     this.video.addEventListener('seeked', this.onSeeked);
   }
@@ -152,6 +157,8 @@ export class ExperienceEngine {
     window.removeEventListener('scroll', this.onScroll);
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('touchstart', this.onTouch);
+    window.removeEventListener('touchend', this.onTouchEnd);
+    window.removeEventListener('touchcancel', this.onTouchEnd);
     window.visualViewport?.removeEventListener('resize', this.onResize);
     this.video.removeEventListener('seeked', this.onSeeked);
     this.video.pause();
@@ -211,6 +218,11 @@ export class ExperienceEngine {
 
   private onTouch = (): void => {
     this.touchInput = true;
+    this.interacting = true;
+  };
+
+  private onTouchEnd = (): void => {
+    this.interacting = false;
   };
 
   /** Times each completed seek, which is what decides how the film is driven. */
@@ -221,13 +233,38 @@ export class ExperienceEngine {
     this.seekCost = this.seekCost === 0 ? cost : this.seekCost * 0.7 + cost * 0.3;
   };
 
+  /**
+   * Keep the walk where it was.
+   *
+   * The scroll length is a function of the viewport height, so after a resize
+   * the same scroll position means a different point in the film: resizing the
+   * window while reading a station used to move the visitor out of it, and on a
+   * phone the address bar sliding away did the same thing mid-scroll. Moving
+   * the scroll position to match the progress we were already at keeps the
+   * picture still and lets the scrollbar be the thing that moves.
+   *
+   * Not while a finger is down, though - correcting the position under an
+   * active gesture would fight the visitor's own momentum.
+   */
   private onResize = (): void => {
+    // The comparison has to be against the span the current progress was read
+    // against: by the time any resize listener runs, the document has already
+    // been re-laid-out, so asking the DOM twice would compare a value with
+    // itself.
+    const progress = this.target;
+    const previousSpan = this.scrollSpan;
     this.measure();
+    const span = this.scrollLength();
+
+    if (span !== previousSpan && !this.interacting) {
+      window.scrollTo({ top: progress * span, behavior: 'instant' });
+    }
     this.readScroll();
   };
 
   private readScroll(): void {
-    this.target = clamp01(window.scrollY / this.scrollLength());
+    this.scrollSpan = this.scrollLength();
+    this.target = clamp01(window.scrollY / this.scrollSpan);
   }
 
   private measure(): void {
