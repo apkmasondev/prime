@@ -89,6 +89,51 @@ describe('progress to frame', () => {
     }
   });
 
+  it('reaches each anchor on the frame, and at the scroll position, it always did', () => {
+    for (const station of STATIONS) {
+      const phase = RESOLVED_PHASES.find((p) => p.stationId === station.id);
+      if (!phase) throw new Error('missing phase');
+      // The progress a constant-rate crossing would reach the anchor at.
+      const at =
+        phase.start +
+        (phase.end - phase.start) *
+          ((station.anchorFrame - phase.fromFrame) / (phase.toFrame - phase.fromFrame));
+      expect(frameAt(at)).toBeCloseTo(station.anchorFrame, 6);
+    }
+  });
+
+  it('rests on the anchor and makes the distance up at the station edges', () => {
+    for (const station of STATIONS) {
+      const phase = RESOLVED_PHASES.find((p) => p.stationId === station.id);
+      if (!phase) throw new Error('missing phase');
+      const span = phase.end - phase.start;
+      const step = span / 400;
+      const rate = (at: number): number => (frameAt(at + step) - frameAt(at - step)) / (2 * step);
+
+      const anchor =
+        phase.start +
+        span * ((station.anchorFrame - phase.fromFrame) / (phase.toFrame - phase.fromFrame));
+      const constant = (phase.toFrame - phase.fromFrame) / span;
+
+      // Slowest where the station is composed, fastest where it hands over.
+      expect(rate(anchor)).toBeLessThan(constant * 0.5);
+      expect(rate(phase.start + span * 0.02)).toBeGreaterThan(constant);
+      expect(rate(phase.end - span * 0.02)).toBeGreaterThan(constant);
+    }
+  });
+
+  it('crosses a transit at a constant rate', () => {
+    const phase = RESOLVED_PHASES.find((p) => p.kind === 'transit');
+    if (!phase) throw new Error('missing phase');
+    const span = phase.end - phase.start;
+    for (const at of [0.15, 0.5, 0.85]) {
+      expect(frameAt(phase.start + span * at)).toBeCloseTo(
+        phase.fromFrame + (phase.toFrame - phase.fromFrame) * at,
+        6,
+      );
+    }
+  });
+
   it('never seeks past the clamped last frame', () => {
     for (let i = 0; i <= 500; i += 1) {
       const s = describeState(i / 500, false, 0);

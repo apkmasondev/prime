@@ -6,7 +6,7 @@
  * "this animation has already played" flags. Scrolling backwards therefore
  * unwinds the experience exactly.
  */
-import { PHASES, VIDEO, frameToTime } from './stations';
+import { PHASES, STATIONS, VIDEO, frameToTime } from './stations';
 import type { Progress, ResolvedPhase, StationId, TimelineState } from './types';
 
 export const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -57,11 +57,61 @@ export function phaseAt(progress: Progress): ResolvedPhase {
   return LAST_PHASE;
 }
 
+/**
+ * How much of the film's own pace is given up at the anchor, where 0 crosses the
+ * station at a constant rate and 1 would stop on the frame entirely.
+ *
+ * Scroll is geared to the film about four times more finely inside a station
+ * than along a transit - some 38 px of scroll per source frame against 8 -
+ * because a station is where the reader stops to read. At that gearing a 24 fps
+ * film advances about eight frames a second under an ordinary scroll, so the
+ * picture holds for an eighth of a second and then steps, and it does that
+ * exactly where the reader is looking hardest at it.
+ *
+ * So the film eases through a station rather than creeping across it: it comes
+ * nearly to rest on the frame the station is composed around, and makes the
+ * distance up towards the edges, where the eye is already moving on. The walk
+ * is unchanged - the anchor is still reached at the same scroll position, on
+ * the same frame, and the curve is monotone, so nothing reverses.
+ */
+const DWELL = 0.7;
+
+/** Monotone on [0,1]; fixes 0, 1/2 and 1, and is slowest in the middle. */
+const slowMiddle = (t: number): number => t + (DWELL * Math.sin(2 * Math.PI * t)) / (2 * Math.PI);
+
+/**
+ * `slowMiddle` around an anchor that is not the middle: straighten the phase so
+ * the anchor sits at 1/2, ease there, then put it back. The two straightenings
+ * cancel, so the result is still monotone, still fixes both ends, and passes
+ * through the anchor with the same value as before.
+ */
+const aroundAnchor = (t: number, anchor: number): number => {
+  const straight = t <= anchor ? t / (2 * anchor) : 0.5 + (t - anchor) / (2 * (1 - anchor));
+  const eased = slowMiddle(straight);
+  return eased <= 0.5 ? 2 * anchor * eased : anchor + (2 * eased - 1) * (1 - anchor);
+};
+
+/**
+ * Where each station's anchor falls inside its own phase. Stations whose anchor
+ * sits against an edge are left to cross at a constant rate, because there is
+ * no middle there to rest in.
+ */
+const ANCHOR_IN_PHASE: ReadonlyMap<number, number> = new Map(
+  RESOLVED_PHASES.flatMap((phase) => {
+    const station = STATIONS.find((s) => s.id === phase.stationId);
+    const span = phase.toFrame - phase.fromFrame;
+    if (phase.kind !== 'station' || !station || span <= 0) return [];
+    const anchor = (station.anchorFrame - phase.fromFrame) / span;
+    return anchor > 0.05 && anchor < 0.95 ? ([[phase.index, anchor]] as const) : [];
+  }),
+);
+
 /** Video frame for a progress value, interpolated inside the containing phase. */
 export function frameAt(progress: Progress): number {
   const phase = phaseAt(progress);
   const t = range(clamp01(progress), phase.start, phase.end);
-  return lerp(phase.fromFrame, phase.toFrame, t);
+  const anchor = ANCHOR_IN_PHASE.get(phase.index);
+  return lerp(phase.fromFrame, phase.toFrame, anchor === undefined ? t : aroundAnchor(t, anchor));
 }
 
 /**
