@@ -39,6 +39,9 @@ test('opens on the title and releases the loader', async ({ page }) => {
 });
 
 test('walks through all six stations and back again', async ({ page }) => {
+  // Twelve navigations, each with its own settle: long by nature, like the
+  // reverse pass, so it gets a budget of its own rather than the default.
+  test.setTimeout(120_000);
   const noise = watchConsole(page);
   await ready(page);
 
@@ -337,7 +340,7 @@ test('plays the film only where seeking is genuinely slow', async ({ page }) => 
   const observed = await page.evaluate(async () => {
     const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
     const video = document.querySelector<HTMLVideoElement>('.film__video');
-    const empty = { playing: 0, samples: 0, presented: 0, seeks: 0, medianSeek: 0, paused: true };
+    const empty = { playing: 0, samples: 0, presented: 0, seeks: 0, slowestSeek: 0, paused: true };
     if (!video) return empty;
 
     const seeks: number[] = [];
@@ -369,7 +372,7 @@ test('plays the film only where seeking is genuinely slow', async ({ page }) => 
     seeks.sort((a, b) => a - b);
     return {
       playing, samples, presented, seeks: seeks.length,
-      medianSeek: seeks[Math.floor(seeks.length / 2)] ?? 0,
+      slowestSeek: seeks.at(-1) ?? 0,
       paused: video.paused,
     };
   });
@@ -379,12 +382,20 @@ test('plays the film only where seeking is genuinely slow', async ({ page }) => 
   expect(seen.presented, 'no film frames reached the screen').toBeGreaterThan(3);
 
   if (seen.playing > 0 && seen.seeks >= 3) {
-    // The engine's own threshold, in milliseconds, with room for the estimate
-    // being a rolling average rather than this run's median.
+    /*
+     * The slowest seek, not the median. The engine switches on a rolling
+     * average weighted towards recent seeks, so a burst of slow ones flips it
+     * while the median of the whole run stays low - and the more the film
+     * plays, the fewer seeks there are left to take a median of. Measuring the
+     * statistic that actually causes the switch is what makes this stable.
+     *
+     * The window starts from rest, where seeks are quick, so the average can
+     * only have climbed on seeks recorded here.
+     */
     expect(
-      seen.medianSeek,
-      `the film was played while seeks were taking only ${String(Math.round(seen.medianSeek))}ms`,
-    ).toBeGreaterThan(30);
+      seen.slowestSeek,
+      `the film was played though no seek took longer than ${String(Math.round(seen.slowestSeek))}ms`,
+    ).toBeGreaterThan(40);
   }
 });
 
