@@ -9,3 +9,7 @@ playwright-report/
 .DS_Store
 Thumbs.db
 *.log
+
+# Local brief and editor/tool configuration — not part of the deliverable
+PRIME_AI_AGENT_PLAN.md
+.claude/
