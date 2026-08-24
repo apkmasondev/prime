@@ -50,6 +50,9 @@
   background: var(--pane-ink-soft);
   scale: var(--gone) 1;
   transform-origin: left center;
+  /* Fades in over its first fifth, so a rule that has only just begun to draw
+     does not read as a stray dot beside the number. */
+  opacity: clamp(0, calc(var(--gone) * 5), 1);
 }
 
 .sieve__cell[data-unit='true'] {
