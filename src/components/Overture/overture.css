@@ -27,6 +27,10 @@
   text-align: center;
 }
 
+.overture__block picture {
+  display: contents;
+}
+
 .overture__mark {
   display: block;
   inline-size: min(56vw, 34rem);
@@ -89,11 +93,38 @@
 }
 
 /* Stacked: the title sits inside the film band, the paper field below stays clear. */
+/*
+ * Stacked, the title is set on the paper field rather than over the picture.
+ * The phone then opens on a clean full-width frame of the corridor with the
+ * piece named beneath it - and the field is never a blank half-screen.
+ */
 .stage[data-mode='stacked'] .overture {
-  inset-block-end: auto;
-  block-size: var(--film-box-h, 50%);
+  inset-block-start: var(--film-box-h, 50%);
+  z-index: 2;
+}
+
+.stage[data-mode='stacked'] .overture::before {
+  background: none;
+}
+
+.stage[data-mode='stacked'] .overture__block {
+  gap: clamp(0.9rem, 3vmin, 1.6rem);
+  padding-block-end: 3.2rem;
 }
 
 .stage[data-mode='stacked'] .overture__mark {
-  inline-size: min(74vw, 22rem);
+  inline-size: min(66vw, 20rem);
+}
+
+.stage[data-mode='stacked'] .overture__subtitle {
+  color: var(--text-strong);
+  font-size: var(--step-1);
+}
+
+.stage[data-mode='stacked'] .overture__prompt {
+  color: var(--text-muted);
+}
+
+.stage[data-mode='stacked'] .overture__prompt-rule {
+  background: var(--rule-strong);
 }

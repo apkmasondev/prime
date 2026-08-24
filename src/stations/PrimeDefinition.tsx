@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { divisors, factorPairs, isPrime } from '../math/primes';
 import './prime-definition.css';
 
-const LIMIT = 24;
+/*
+ * Eighteen, in six columns: three rows keep every cell tall enough to carry a
+ * number and its divisor marks at any card size, and 1 to 18 already holds
+ * seven primes, the unit, and both kinds of composite.
+ */
+const LIMIT = 18;
 
 interface Cell {
   readonly n: number;

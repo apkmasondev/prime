@@ -139,6 +139,61 @@ test('carries the whole lesson in text when motion is reduced', async ({ page })
   expect(noise).toEqual([]);
 });
 
+/**
+ * The stacked layout has a permanent paper field below the film. Nothing may
+ * leave it blank, and nothing may paint over what is written on it.
+ */
+test('shows the opening and the closing, whatever the layout', async ({ page }) => {
+  await ready(page);
+
+  const visible = async (selector: string): Promise<boolean> =>
+    page.evaluate((sel) => {
+      const el = document.querySelector(sel);
+      if (!el) return false;
+      const box = el.getBoundingClientRect();
+      if (box.width < 40 || box.height < 8) return false;
+      const style = getComputedStyle(el);
+      if (Number(style.opacity) < 0.5 || style.visibility === 'hidden') return false;
+
+      // The piece is decorative and takes no pointer events, so hit testing is
+      // enabled just long enough to ask what is stacked at this element's own
+      // centre - then the stack is walked from the front until something with a
+      // solid surface is reached. Anything the text sits behind hides it.
+      const patch = document.createElement('style');
+      patch.textContent = '.stage, .stage * { pointer-events: auto !important; }';
+      document.head.append(patch);
+      const stack = document.elementsFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+      patch.remove();
+
+      const opaque = (node: Element): boolean => {
+        const s = getComputedStyle(node);
+        if (Number(s.opacity) < 0.9) return false;
+        const bg = s.backgroundColor;
+        const alpha = /rgba?\([^)]*?,\s*([\d.]+)\s*\)/.exec(bg);
+        return bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent' && Number(alpha?.[1] ?? 1) > 0.9;
+      };
+
+      for (const node of stack) {
+        if (node === el || el.contains(node) || node.contains(el)) return true;
+        if (opaque(node)) return false;
+      }
+      return false;
+    }, selector);
+
+  // Polled rather than sampled once: both ends arrive on an eased curve, and
+  // under a parallel run the machine is not always prompt about it.
+  await expect
+    .poll(() => visible('.overture__subtitle'), { message: 'the opening is hidden' })
+    .toBe(true);
+
+  await page.evaluate(() => {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+  });
+  await expect
+    .poll(() => visible('.coda__line'), { message: 'the closing is hidden' })
+    .toBe(true);
+});
+
 test('ships no audio track and no horizontal scroll', async ({ page }) => {
   await ready(page);
 

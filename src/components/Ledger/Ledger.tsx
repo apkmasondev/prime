@@ -11,7 +11,10 @@ import './ledger.css';
  */
 export function Ledger(): React.JSX.Element {
   const { stationId, phaseKind } = useExperienceState();
-  const quiet = stationId === null && phaseKind === 'transit';
+  // Any moment with no card up: the field below the film is permanent, so it
+  // always has something to say. The opening and the closing fade it out
+  // themselves, in CSS, because they arrive on their own curves.
+  const quiet = stationId === null && phaseKind !== 'intro';
   const surface = useSurface<HTMLDivElement>('ledger');
 
   return (

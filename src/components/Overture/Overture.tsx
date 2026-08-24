@@ -12,7 +12,7 @@ export function Overture(): React.JSX.Element {
   return (
     <div className="overture" ref={surface} aria-hidden="true">
       <div className="overture__block">
-        <Wordmark className="overture__mark" />
+        <Wordmark className="overture__mark" tone="auto" />
         <p className="overture__subtitle">A Short Walk Through Infinity</p>
         <p className="overture__prompt">
           <span className="overture__prompt-rule" />

@@ -5,9 +5,17 @@
   gap: clamp(0.4rem, 1.2vmin, 0.9rem);
 }
 
+/*
+ * The grid takes its height from its own proportions rather than from whatever
+ * the flex line has left. Sizing it the other way round let the cells keep a
+ * minimum height the row could not honour, and the rows drew over each other.
+ */
 .primes__grid {
   flex: 0 1 auto;
   min-block-size: 0;
+  inline-size: min(100%, calc(var(--figure-cap, 100%) * 2));
+  aspect-ratio: 6 / 3;
+  margin-inline: auto;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   grid-auto-rows: minmax(0, 1fr);
@@ -16,13 +24,13 @@
 
 .primes__cell {
   /* Numbers resolve left to right as the board is read. */
-  opacity: clamp(0, calc((var(--r) * 30 - var(--i)) * 0.5), 1);
+  opacity: clamp(0, calc((var(--r) * 23 - var(--i)) * 0.55), 1);
 }
 
 .primes__button {
   inline-size: 100%;
   block-size: 100%;
-  min-block-size: clamp(1.6rem, 4.6vmin, 3rem);
+  min-block-size: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -38,7 +46,8 @@
 
 .primes__n {
   font-family: var(--font-display);
-  font-size: var(--step-1);
+  /* Tied to the figure's height, so the number always fits the cell it is in. */
+  font-size: clamp(0.72rem, 11cqb, 1.5rem);
   line-height: 1;
   font-variant-numeric: lining-nums tabular-nums;
   color: var(--pane-muted);
@@ -69,25 +78,26 @@
 .primes__dots {
   display: flex;
   align-items: center;
-  gap: 2px;
-  block-size: 5px;
+  gap: 0.14em;
+  block-size: 0.34em;
+  font-size: clamp(0.72rem, 11cqb, 1.5rem);
 }
 
 .primes__dot {
-  inline-size: 3px;
-  block-size: 3px;
+  inline-size: 0.2em;
+  block-size: 0.2em;
   border-radius: 50%;
   background: var(--pane-ink-soft);
 }
 
 .primes__cell[data-prime='true'] .primes__dot {
-  inline-size: 4px;
-  block-size: 4px;
+  inline-size: 0.26em;
+  block-size: 0.26em;
   background: var(--pane-accent);
 }
 
 .primes__more {
-  font-size: 9px;
+  font-size: 0.42em;
   line-height: 1;
   color: var(--pane-muted);
 }
@@ -137,11 +147,8 @@
   background: var(--pane-accent);
 }
 
-@media (pointer: coarse) {
-  .primes__button {
-    min-block-size: 2.4rem;
-  }
-}
+/* A phone gives the card its full width, so the cells come out well above the
+   comfortable touch size without being forced to it. */
 
 @media (prefers-reduced-motion: reduce) {
   .primes__cell {

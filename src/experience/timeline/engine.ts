@@ -302,7 +302,7 @@ export class ExperienceEngine {
   private writeStyles(state: TimelineState): void {
     this.write('--progress', state.progress.toFixed(5), ['index']);
     this.write('--intro', state.introPresence.toFixed(4), ['overture', 'index']);
-    this.write('--outro', state.outroPresence.toFixed(4), ['coda']);
+    this.write('--outro', state.outroPresence.toFixed(4), ['coda', 'ledger']);
 
     this.write('--film-x', `${(Math.round(this.fit.originX * 20) / 20).toFixed(2)}px`, ['film']);
     this.write('--film-y', `${(Math.round(this.fit.originY * 20) / 20).toFixed(2)}px`, ['film']);

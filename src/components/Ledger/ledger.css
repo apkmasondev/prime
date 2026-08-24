@@ -38,7 +38,7 @@
 }
 
 .ledger__label[data-visible='true'] {
-  opacity: 1;
+  opacity: calc(1 - var(--outro, 0));
 }
 
 .ledger__mark {

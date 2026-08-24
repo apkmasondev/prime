@@ -69,6 +69,8 @@
 /* Stacked: the closing words move onto the paper field so the final pose is
    never covered. */
 .stage[data-mode='stacked'] .coda {
+  /* Above the paper field, which is a positioned layer in its own right. */
+  z-index: 2;
   inset-block-start: var(--film-box-h, 50%);
   align-items: center;
 }
