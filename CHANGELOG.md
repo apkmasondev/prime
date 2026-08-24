@@ -70,7 +70,13 @@ Verified rather than assumed: across a full journey at 1440×810, both
 unthrottled and at 4× CPU, the film is **played 0% of the time** — the measured
 seek cost never reaches the threshold, so the path taken is exactly the one it
 was before, at 32.5 and 27 frames presented per second with no dropped frames.
-A test now holds that line: *scrubs rather than plays wherever seeking is cheap*.
+A test holds that line — *chooses seeking or playing by what a seek actually
+costs*. It measures the machine before it asserts anything, because the
+guarantee is conditional on the machine: where a seek lands quickly the film
+must be scrubbed and never played, and where it does not, playback must engage
+and put frames on screen. A CI runner decoding in software takes the second
+branch, which is how the first version of this test failed and taught the
+distinction.
 
 ## Technical audit — 2026-08-24
 

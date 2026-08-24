@@ -323,36 +323,74 @@ test('announces each number once, with its divisor count', async ({ page }) => {
 
 /**
  * The film is driven by playing it only where seeking is measured to be too
- * expensive to scrub with. Everywhere a seek lands inside a frame - which is
- * every desktop - it must still be a scrubbed film and never a played one.
+ * expensive to scrub with. The guarantee is conditional on the machine, so the
+ * test measures the machine first: where a seek lands quickly the film must
+ * still be scrubbed and never played, and where it does not, playback must
+ * actually engage and put frames on screen. A CI runner decoding in software
+ * takes the second branch; a developer's desktop takes the first.
  */
-test('scrubs rather than plays wherever seeking is cheap', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop', 'the guarantee is about fast-seeking devices');
+test('chooses seeking or playing by what a seek actually costs', async ({ page }) => {
   await ready(page);
+
+  const seekCost = await page.evaluate(async () => {
+    const video = document.querySelector<HTMLVideoElement>('.film__video');
+    if (!video) return Infinity;
+    const once = (time: number): Promise<number> =>
+      new Promise((resolve) => {
+        const started = performance.now();
+        const done = (): void => {
+          video.removeEventListener('seeked', done);
+          resolve(performance.now() - started);
+        };
+        video.addEventListener('seeked', done);
+        video.currentTime = time;
+      });
+    const runs: number[] = [];
+    for (let i = 0; i < 7; i += 1) runs.push(await once(4 + i * 0.5));
+    runs.sort((a, b) => a - b);
+    return runs[Math.floor(runs.length / 2)] ?? Infinity;
+  });
 
   const observed = await page.evaluate(async () => {
     const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
     const video = document.querySelector<HTMLVideoElement>('.film__video');
     let playing = 0;
     let samples = 0;
+    let presented = 0;
+    let watching = true;
+    const onFrame = (): void => {
+      presented += 1;
+      if (watching) video?.requestVideoFrameCallback(onFrame);
+    };
+    video?.requestVideoFrameCallback(onFrame);
     const watch = setInterval(() => {
       samples += 1;
       if (video && !video.paused) playing += 1;
     }, 16);
 
+    window.scrollTo(0, 0);
+    await sleep(500);
     const max = document.documentElement.scrollHeight - window.innerHeight;
     for (let y = 0; y <= max; y += 90) { window.scrollTo(0, y); await sleep(8); }
-    await sleep(200);
-    for (let y = max; y >= 0; y -= 90) { window.scrollTo(0, y); await sleep(8); }
-    await sleep(200);
+    await sleep(300);
 
     clearInterval(watch);
-    return { playing, samples, paused: video?.paused ?? true };
+    watching = false;
+    return { playing, samples, presented };
   });
 
-  expect(observed.samples).toBeGreaterThan(50);
-  expect(observed.playing, 'the film was played on a device that seeks quickly').toBe(0);
-  expect(observed.paused).toBe(true);
+  expect(observed.samples).toBeGreaterThan(40);
+
+  // The engine's own threshold, in milliseconds.
+  if (seekCost < 60) {
+    expect(observed.playing, `seeks take ${String(Math.round(seekCost))}ms, so the film must be scrubbed`).toBe(0);
+  } else {
+    expect(
+      observed.playing,
+      `seeks take ${String(Math.round(seekCost))}ms, so playback should have taken over`,
+    ).toBeGreaterThan(0);
+  }
+  expect(observed.presented, 'no film frames reached the screen').toBeGreaterThan(10);
 });
 
 test('ships no audio track and no horizontal scroll', async ({ page }) => {
