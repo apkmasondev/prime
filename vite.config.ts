@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// GitHub Pages project sites are served from /<repo>/. `BASE_PATH` is supplied by CI;
-// local dev and user/organisation pages fall back to root.
-const base = process.env.BASE_PATH ?? '/';
+// GitHub Pages project sites are served from /<repo>/. CI reads the real path
+// from the Pages API, which may arrive without a trailing slash; Vite needs one.
+const base = `${(process.env.BASE_PATH ?? '/').replace(/\/*$/, '')}/`;
 
 /**
  * Social scrapers do not resolve relative image URLs reliably, so the absolute

@@ -59,6 +59,22 @@ Three regression tests, each guarding something this audit had to verify by hand
 - **No secrets.** Scan over tracked files found only false positives (a GitHub
   permission name, the `js-tokens` package). `source/` does not reach `dist/`.
 
+### Deployment
+
+The site is served from a custom domain, `https://apkmason.dev/prime/`. The
+workflow had been constructing the public URL as `<owner>.github.io/<repo>/`,
+which reaches the site only through a redirect — fine for a browser, not
+dependable for a social scraper fetching an Open Graph image. The public path
+and absolute URL now come from `actions/configure-pages`, which reports where
+the site is actually served from, and the page carries a canonical link and
+`og:url`. Vite's base is normalised, since that action reports the path without
+a trailing slash and Vite needs one.
+
+Every workflow action was one to three majors behind and has been updated:
+checkout and setup-node to v7, upload-artifact to v7, upload-pages-artifact and
+deploy-pages to v5. Gating was checked: the steps run in order, a failure fails
+the job, and `deploy` depends on it, so nothing ships past a red gate.
+
 ### Measurements
 
 Full forward-and-back journey, production build. "README" is the table already

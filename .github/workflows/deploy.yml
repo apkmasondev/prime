@@ -12,6 +12,7 @@ concurrency:
 
 permissions:
   contents: read
+  pages: read
 
 jobs:
   verify:
@@ -24,6 +25,12 @@ jobs:
         with:
           node-version: 24
           cache: npm
+
+      # Reports where this site is actually served from, custom domain included,
+      # rather than assuming <owner>.github.io/<repo>/.
+      - name: Resolve the public URL
+        id: pages
+        uses: actions/configure-pages@v5
 
       - name: Install
         run: npm ci
@@ -57,16 +64,8 @@ jobs:
       # serves from the root.
       - name: Build for Pages
         env:
-          # A project site is served from /<repo>/; a user or organisation site from root.
-          BASE_PATH: >-
-            ${{ github.event.repository.name == format('{0}.github.io', github.repository_owner)
-                && '/'
-                || format('/{0}/', github.event.repository.name) }}
-          SITE_URL: >-
-            https://${{ github.repository_owner }}.github.io${{
-              github.event.repository.name == format('{0}.github.io', github.repository_owner)
-                && '/'
-                || format('/{0}/', github.event.repository.name) }}
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
         run: npm run build
 
       - name: Upload Pages artifact
